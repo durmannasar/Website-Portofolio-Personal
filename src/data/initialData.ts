@@ -1,0 +1,811 @@
+import { Project, ServiceItem, ClientItem, HeroSlide, SiteSettings, MediaFile, EditorialInsight, ContentProtectionSettings } from '../types';
+
+export const defaultContentProtection: ContentProtectionSettings = {
+  enabled: true,
+  disableRightClick: true,
+  disableTextSelection: true,
+  disableCopyShortcut: true,
+  disableSaveShortcut: true,
+  disableImageDrag: true,
+  mobileLongPressProtection: true,
+  protectOriginalImages: true,
+  generateWebVersion: true,
+  watermarkEnabled: false,
+  watermarkText: 'Durman Nasar Studio',
+  watermarkImage: '',
+  watermarkOpacity: 0.28,
+  watermarkPosition: 'bottom-right',
+  watermarkScale: 1,
+};
+
+export const initialSiteSettings: SiteSettings = {
+  studioName: 'Durman Nasar Studio',
+  tagline: 'Creative Ideas. Strategic Design. Meaningful Experiences.',
+  email: 'drmn@durmannasarstudio.com',
+  phone: '+62 856 8439 341',
+  whatsapp: '+628568439341',
+  location: 'Jakarta, Indonesia (GMT+7)',
+  bio: 'Durman Nasar Studio is a multidisciplinary creative practice combining graphic design, kinetic motion, digital marketing, photography, videography, and spatial 3D experiences. We craft resonant visual identities and campaigns for forward-thinking enterprises, property developments, luxury hospitality, and cultural brands.',
+  experienceYears: 9,
+  completedProjects: 140,
+  gaMeasurementId: 'G-DURMANNASAR',
+  searchConsoleVerification: 'google-site-verification-durman-nasar-studio',
+  contentProtection: defaultContentProtection,
+  socials: {
+    instagram: 'https://instagram.com/durmannasar',
+    linkedin: 'https://linkedin.com/in/durmannasar',
+    behance: 'https://behance.net/durmannasar',
+    vimeo: 'https://vimeo.com/durmannasar',
+    youtube: 'https://youtube.com/@durmannasar',
+  },
+};
+
+export const initialMediaFiles: MediaFile[] = [
+  {
+    id: 'media-1',
+    filename: 'hero_studio_showcase.jpg',
+    url: '/src/assets/images/hero_studio_showcase_1790391271997.jpg',
+    mimetype: 'image/jpeg',
+    size: 420800,
+    altText: 'Durman Nasar Studio workspace with cinema monitors and architectural models',
+    title: 'Studio Workspace & Showreel Setup',
+    uploadedAt: '2026-09-20T10:00:00Z',
+  },
+  {
+    id: 'media-2',
+    filename: 'project_exhibition_booth.jpg',
+    url: '/src/assets/images/project_exhibition_booth_1790391286709.jpg',
+    mimetype: 'image/jpeg',
+    size: 512400,
+    altText: '3D Spatial Exhibition Pavilion with organic curved architecture and ambient illumination',
+    title: 'Synapse 3D Exhibition Pavilion Rendering',
+    uploadedAt: '2026-09-21T11:30:00Z',
+  },
+  {
+    id: 'media-3',
+    filename: 'project_editorial_branding.jpg',
+    url: '/src/assets/images/project_editorial_branding_1790391299935.jpg',
+    mimetype: 'image/jpeg',
+    size: 489200,
+    altText: 'Luxury brand identity suite with debossed monogram on textured cotton paper',
+    title: 'Aura Luxury Editorial Branding System',
+    uploadedAt: '2026-09-22T09:15:00Z',
+  },
+  {
+    id: 'media-4',
+    filename: 'project_cinematography_still.jpg',
+    url: '/src/assets/images/project_cinematography_still_1790391310888.jpg',
+    mimetype: 'image/jpeg',
+    size: 534100,
+    altText: 'Cinematic film still of luxury tropical architecture during twilight',
+    title: 'Terra Hospitality Cinematic Film Still',
+    uploadedAt: '2026-09-23T14:45:00Z',
+  },
+];
+
+export const initialHeroSlides: HeroSlide[] = [
+  {
+    id: 'slide-1',
+    headline: 'Creative Ideas. Strategic Design. Meaningful Experiences.',
+    subheadline: 'A multidisciplinary studio bridging graphic identity, kinetic motion, digital marketing, and spatial architecture.',
+    ctaText: 'Explore Selected Work',
+    ctaLink: '/work',
+    desktopImage: '/src/assets/images/hero_studio_showcase_1790391271997.jpg',
+    categoryTag: 'Multidisciplinary Creative Studio',
+    order: 1,
+    active: true,
+  },
+  {
+    id: 'slide-2',
+    headline: 'Immersive Spatial Environments & 3D Exhibition Pavilions',
+    subheadline: 'Crafting unforgettable architectural brand presence for international expos, luxury trade fairs, and biennial pavilions.',
+    ctaText: 'View Exhibition Projects',
+    ctaLink: '/work?category=3D+Exhibition+Booth',
+    desktopImage: '/src/assets/images/project_exhibition_booth_1790391286709.jpg',
+    categoryTag: '3D Exhibition Architecture',
+    order: 2,
+    active: true,
+  },
+  {
+    id: 'slide-3',
+    headline: 'Artful Editorial Identity & High-Impact Brand Systems',
+    subheadline: 'Enduring visual systems built on rigorous typographic discipline, custom tactile print collateral, and digital cohesion.',
+    ctaText: 'Discover Branding Work',
+    ctaLink: '/work?category=Graphic+Design',
+    desktopImage: '/src/assets/images/project_editorial_branding_1790391299935.jpg',
+    categoryTag: 'Graphic Design & Identity',
+    order: 3,
+    active: true,
+  },
+  {
+    id: 'slide-4',
+    headline: 'Cinematography & Broadcast-Grade Visual Storytelling',
+    subheadline: 'High-end commercial films, luxury real estate documentaries, and rhythmic video editing that commands total audience focus.',
+    ctaText: 'Watch Motion & Film Work',
+    ctaLink: '/work?category=Videography',
+    desktopImage: '/src/assets/images/project_cinematography_still_1790391310888.jpg',
+    categoryTag: 'Film & Motion Direction',
+    order: 4,
+    active: true,
+  },
+];
+
+export const initialProjects: Project[] = [
+  {
+    id: 'proj-1',
+    slug: 'aura-luxury-editorial-identity',
+    title: 'AURA — Luxury Editorial Identity & Packaging',
+    client: 'Aura Maison de Parfumerie',
+    year: '2025',
+    category: 'Graphic Design',
+    services: ['Brand Identity', 'Packaging Design', 'Art Direction', 'Typography System', 'Print Production'],
+    description: 'A bespoke brand identity and tactile packaging suite for an artisanal fragrance house, blending classical proportion with contemporary restraint.',
+    challenge: 'The fragrance house required an aesthetic language that resisted transient trends, speaking to discerning luxury buyers in Tokyo, Paris, and Jakarta without relying on generic gold accents.',
+    approach: 'We developed a custom neoclassical serif logotype, paired with blind-debossed raw cotton paper stocks and a strict monochrome palette with a single terracotta vermilion accent.',
+    strategy: 'Focused on haptic micro-textures and unboxing rhythm to elevate perceived product value by over 180% across regional retail flagship counters.',
+    coverImage: '/src/assets/images/project_editorial_branding_1790391299935.jpg',
+    thumbnail: '/src/assets/images/project_editorial_branding_1790391299935.jpg',
+    galleryImages: [
+      '/src/assets/images/project_editorial_branding_1790391299935.jpg',
+      '/src/assets/images/hero_studio_showcase_1790391271997.jpg',
+    ],
+    results: [
+      { metric: '+185%', label: 'Average Retail Order Value' },
+      { metric: '14,000+', label: 'Flagship Edition Units Sold' },
+      { metric: 'Design Gold', label: 'Indonesian Brand Awards 2025' },
+    ],
+    isFeatured: true,
+    order: 1,
+    status: 'published',
+    seoTitle: 'AURA Luxury Editorial Brand Identity – Durman Nasar Studio',
+    metaDescription: 'Complete brand identity and packaging design case study by Durman Nasar Studio for luxury perfume house Aura.',
+    createdAt: '2025-11-10T12:00:00Z',
+    updatedAt: '2026-01-15T10:00:00Z',
+  },
+  {
+    id: 'proj-2',
+    slug: 'synapse-3d-exhibition-pavilion',
+    title: 'SYNAPSE — 3D Immersive Exhibition Pavilion',
+    client: 'Kinetix Global Technology',
+    year: '2025',
+    category: '3D Exhibition Booth',
+    services: ['3D Spatial Design', 'Booth Architecture', 'Material Curation', 'Interactive LED Integration', 'On-Site Build Supervision'],
+    description: 'A 240-square-meter architectural exhibition pavilion designed for the Asia-Pacific Smart Cities Biennial, featuring fluid curved acoustic envelopes and interactive product pods.',
+    challenge: 'Create a show-stopping physical presence that balances high foot-traffic flow, private VIP consultation chambers, and an interactive digital product showcase within strict expo height limits.',
+    approach: 'Engineered an organic double-curved architectural shell utilizing brushed titanium composite and warm travertine plinths, accented by subtle ambient circadian LED illumination.',
+    strategy: 'Choreographed a seamless visitor journey starting from a dramatic open portal into intimate touchpoint alcoves, boosting dwell time by 3.4x compared to neighboring exhibits.',
+    coverImage: '/src/assets/images/project_exhibition_booth_1790391286709.jpg',
+    thumbnail: '/src/assets/images/project_exhibition_booth_1790391286709.jpg',
+    galleryImages: [
+      '/src/assets/images/project_exhibition_booth_1790391286709.jpg',
+      '/src/assets/images/hero_studio_showcase_1790391271997.jpg',
+    ],
+    results: [
+      { metric: '18,500+', label: 'Expo Pavilion Visitors' },
+      { metric: '3.4x', label: 'Average Booth Dwell Time' },
+      { metric: 'Best Booth', label: 'Biennial Spatial Design Award' },
+    ],
+    isFeatured: true,
+    order: 2,
+    status: 'published',
+    seoTitle: 'Synapse 3D Exhibition Pavilion Design – Durman Nasar Studio',
+    metaDescription: 'Award-winning 3D exhibition booth architecture and spatial experience designed by Durman Nasar Studio for Kinetix.',
+    createdAt: '2025-08-14T09:00:00Z',
+    updatedAt: '2025-10-02T16:00:00Z',
+  },
+  {
+    id: 'proj-3',
+    slug: 'terra-luxury-hospitality-film',
+    title: 'TERRA — Hospitality Doc & Cinematography',
+    client: 'The Sanctum Villas & Estates',
+    year: '2025',
+    category: 'Videography',
+    services: ['Commercial Cinematography', 'Creative Direction', 'Color Grading', 'Drone Aerials', 'Sound Design'],
+    description: 'An evocative cinematic mini-documentary capturing the sensory soul of a cliffside tropical modernist sanctuary in Uluwatu, Bali.',
+    challenge: 'Elevate the resort past predictable travel influencer tropes into an emotionally gripping architectural visual essay that appeals to ultra-high-net-worth travellers.',
+    approach: 'Filmed on anamorphic primes during twilight and dawn golden hours. Natural ambient soundscapes captured on location were woven with an original minimalist cello score.',
+    strategy: 'Distributed across targeted YouTube pre-roll, luxury private aviation lounges, and bespoke landing pages, producing a record-breaking surge in direct international bookings.',
+    coverImage: '/src/assets/images/project_cinematography_still_1790391310888.jpg',
+    thumbnail: '/src/assets/images/project_cinematography_still_1790391310888.jpg',
+    galleryImages: [
+      '/src/assets/images/project_cinematography_still_1790391310888.jpg',
+      '/src/assets/images/hero_studio_showcase_1790391271997.jpg',
+    ],
+    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    results: [
+      { metric: '1.2M+', label: 'Organic Video Views' },
+      { metric: '+320%', label: 'Direct High-Season Bookings' },
+      { metric: '94%', label: 'Completion Rate on 3-Min Reel' },
+    ],
+    isFeatured: true,
+    order: 3,
+    status: 'published',
+    seoTitle: 'Terra Luxury Hospitality Cinematography – Durman Nasar Studio',
+    metaDescription: 'Cinematic brand film and aerial videography for ultra-luxury hospitality estate by Durman Nasar Studio.',
+    createdAt: '2025-06-20T11:00:00Z',
+    updatedAt: '2025-09-12T14:30:00Z',
+  },
+  {
+    id: 'proj-4',
+    slug: 'kronos-kinetic-motion-broadcast',
+    title: 'KRONOS — Kinetic Motion & Broadcast Ident',
+    client: 'Vanguard Media Network',
+    year: '2025',
+    category: 'Motion Graphics',
+    services: ['Kinetic Typography', '3D Motion Design', 'Broadcast Package', 'Sound Sync', 'Digital OOH Idents'],
+    description: 'High-energy rhythmic kinetic typography system and broadcast identity suite for an innovative Southeast Asian financial streaming channel.',
+    challenge: 'Transform dense financial market reports into captivating, high-velocity motion graphics that retain viewers through fast commercial breaks.',
+    approach: 'Engineered a variable font motion system in Cinema 4D and After Effects with physics-based acceleration curves and bold industrial framing.',
+    strategy: 'Standardized reusable motion design kits across 24 daily news segments, cutting production assembly turnaround by 65%.',
+    coverImage: '/src/assets/images/hero_studio_showcase_1790391271997.jpg',
+    thumbnail: '/src/assets/images/hero_studio_showcase_1790391271997.jpg',
+    galleryImages: [
+      '/src/assets/images/hero_studio_showcase_1790391271997.jpg',
+      '/src/assets/images/project_editorial_branding_1790391299935.jpg',
+    ],
+    results: [
+      { metric: '-65%', label: 'Broadcast Motion Turnaround' },
+      { metric: '8.4M', label: 'Monthly Broadcast Reach' },
+      { metric: '+42%', label: 'Viewer Retention Through Commercials' },
+    ],
+    isFeatured: true,
+    order: 4,
+    status: 'published',
+    seoTitle: 'Kronos Kinetic Motion & Broadcast Graphics – Durman Nasar Studio',
+    metaDescription: 'Kinetic typography and broadcast identity graphics designed by Durman Nasar Studio for Vanguard Media Network.',
+    createdAt: '2025-04-18T08:00:00Z',
+    updatedAt: '2025-07-22T10:00:00Z',
+  },
+  {
+    id: 'proj-5',
+    slug: 'nocturne-social-media-strategy',
+    title: 'NOCTURNE — Social Media Visual Strategy & Content Engine',
+    client: 'Nocturne Craft Roasters',
+    year: '2025',
+    category: 'Social Media',
+    services: ['Content Strategy', 'Micro-Documentary Reels', 'Feed Architecture', 'Community Engagement', 'Copywriting'],
+    description: 'An editorial social media ecosystem that turned an independent specialty coffee atelier into a viral cultural touchpoint across Instagram and TikTok.',
+    challenge: 'Stand out in an oversaturated beverage market without resorting to cheap clickbait or generic aesthetic latte art reels.',
+    approach: 'Designed a high-contrast editorial grid alternating deep origin sourcing stories, ASMR bean roasting micro-cuts, and barista craft masterclasses.',
+    strategy: 'Built an algorithmic-first short-form video release rhythm generating over 2.4 million organic monthly impressions in under 90 days.',
+    coverImage: '/src/assets/images/project_editorial_branding_1790391299935.jpg',
+    thumbnail: '/src/assets/images/project_editorial_branding_1790391299935.jpg',
+    galleryImages: [
+      '/src/assets/images/project_editorial_branding_1790391299935.jpg',
+      '/src/assets/images/project_cinematography_still_1790391310888.jpg',
+    ],
+    results: [
+      { metric: '+480%', label: 'Organic Instagram Follower Growth' },
+      { metric: '4.8M', label: 'Total Content Impressions' },
+      { metric: '+210%', label: 'Online Store Bean Subscription Sales' },
+    ],
+    isFeatured: false,
+    order: 5,
+    status: 'published',
+    seoTitle: 'Nocturne Social Media Visual Strategy – Durman Nasar Studio',
+    metaDescription: 'Editorial social media content engine and viral growth strategy by Durman Nasar Studio.',
+    createdAt: '2025-03-05T14:00:00Z',
+    updatedAt: '2025-05-18T16:00:00Z',
+  },
+  {
+    id: 'proj-6',
+    slug: 'nexus-digital-marketing-campaign',
+    title: 'NEXUS — Performance Acquisition & Omnichannel Growth',
+    client: 'Nexus Financial Ecosystem',
+    year: '2025',
+    category: 'Digital Marketing',
+    services: ['Performance Media', 'Conversion Rate Optimization', 'Funnel Strategy', 'Creative A/B Testing', 'Analytics & Attribution'],
+    description: 'A high-converting digital acquisition framework combining precision programmatic ads, high-converting interactive landing pages, and lead retargeting.',
+    challenge: 'Lower customer acquisition cost (CAC) for a B2B wealth management platform in an increasingly competitive fintech climate.',
+    approach: 'Executed 120+ targeted creative iterations testing message framing against corporate treasurers, mid-market founders, and high-net-worth investors.',
+    strategy: 'Re-architected the client onboarding funnel with instant portfolio simulators, slashing drop-off rates and doubling qualified lead volume.',
+    coverImage: '/src/assets/images/hero_studio_showcase_1790391271997.jpg',
+    thumbnail: '/src/assets/images/hero_studio_showcase_1790391271997.jpg',
+    galleryImages: [
+      '/src/assets/images/hero_studio_showcase_1790391271997.jpg',
+    ],
+    results: [
+      { metric: '-42%', label: 'Reduction in Cost Per Acquisition' },
+      { metric: '4.8x', label: 'Return on Ad Spend (ROAS)' },
+      { metric: '+165%', label: 'Qualified Enterprise Pipeline' },
+    ],
+    isFeatured: false,
+    order: 6,
+    status: 'published',
+    seoTitle: 'Nexus Digital Marketing & Performance Campaign – Durman Nasar Studio',
+    metaDescription: 'Omnichannel digital marketing and conversion rate optimization case study by Durman Nasar Studio.',
+    createdAt: '2025-02-12T10:00:00Z',
+    updatedAt: '2025-04-01T12:00:00Z',
+  },
+  {
+    id: 'proj-7',
+    slug: 'solstice-commercial-video-editing',
+    title: 'SOLSTICE — Commercial Post-Production & Color Grading',
+    client: 'Solstice Electric Automotives',
+    year: '2024',
+    category: 'Video Editing',
+    services: ['Offline & Online Editing', 'DaVinci Resolve Color Grade', 'VFX Clean-up', 'Sound Mix', 'Multi-Format Delivery'],
+    description: 'A pulse-pounding, seamless commercial edit for a flagship luxury electric vehicle launch, aired across international digital billboards and streaming services.',
+    challenge: 'Stitch together 60 hours of raw multi-camera footage into an uninterrupted, adrenaline-fueled 60-second hero commercial and seven vertical cutdowns.',
+    approach: 'Cut on precise rhythmic downbeats using micro-speed ramping and bespoke film grain textures, finished with a custom cinematic teal-and-copper color profile.',
+    strategy: 'Mastered in Dolby 5.1 and vertical 9:16 mobile formats simultaneously, achieving immediate cross-platform viral distribution on launch day.',
+    coverImage: '/src/assets/images/project_cinematography_still_1790391310888.jpg',
+    thumbnail: '/src/assets/images/project_cinematography_still_1790391310888.jpg',
+    galleryImages: [
+      '/src/assets/images/project_cinematography_still_1790391310888.jpg',
+      '/src/assets/images/hero_studio_showcase_1790391271997.jpg',
+    ],
+    results: [
+      { metric: '100%', label: 'On-Time Global Embargo Launch' },
+      { metric: '22M', label: 'Combined Views Worldwide' },
+      { metric: 'Silver', label: 'Asian Commercial Craft Award' },
+    ],
+    isFeatured: false,
+    order: 7,
+    status: 'published',
+    seoTitle: 'Solstice Commercial Video Editing – Durman Nasar Studio',
+    metaDescription: 'High-end commercial video editing, sound design, and color grading by Durman Nasar Studio for Solstice EV.',
+    createdAt: '2024-11-20T15:00:00Z',
+    updatedAt: '2025-01-10T11:00:00Z',
+  },
+  {
+    id: 'proj-8',
+    slug: 'monolith-architectural-photography',
+    title: 'MONOLITH — Architectural & Editorial Photography',
+    client: 'Atelier Urbanist Architects',
+    year: '2024',
+    category: 'Photography',
+    services: ['Architectural Photography', 'Interior Documentation', 'Long-Exposure Dusk Studies', 'Editorial Retouching'],
+    description: 'A comprehensive editorial photographic series documenting a brutalist concrete cultural centre in Central Java, exploring natural light cast through massive geometric voids.',
+    challenge: 'Capture the monumental scale and subtle concrete aggregate textures without optical distortion across varying daylight conditions.',
+    approach: 'Utilized specialized tilt-shift lenses and calculated sun-angle tracking, exposing during dawn overcast and blue hour twilight for maximum tonal gradation.',
+    strategy: 'Published as a featured editorial monograph in leading global architecture journals including Dezeen and ArchDaily.',
+    coverImage: '/src/assets/images/project_exhibition_booth_1790391286709.jpg',
+    thumbnail: '/src/assets/images/project_exhibition_booth_1790391286709.jpg',
+    galleryImages: [
+      '/src/assets/images/project_exhibition_booth_1790391286709.jpg',
+      '/src/assets/images/project_editorial_branding_1790391299935.jpg',
+    ],
+    results: [
+      { metric: '18+', label: 'International Architectural Press Features' },
+      { metric: '120,000+', label: 'Digital Archival Shares' },
+      { metric: 'Exhibition', label: 'Jakarta Architectural Triennale 2024' },
+    ],
+    isFeatured: false,
+    order: 8,
+    status: 'published',
+    seoTitle: 'Monolith Architectural Photography – Durman Nasar Studio',
+    metaDescription: 'Award-winning architectural and commercial photography series by Durman Nasar Studio.',
+    createdAt: '2024-09-08T09:00:00Z',
+    updatedAt: '2024-12-05T14:00:00Z',
+  },
+];
+
+export const initialServices: ServiceItem[] = [
+  {
+    id: 'srv-1',
+    code: '01',
+    title: 'Graphic Design',
+    tagline: 'Brand Identity Systems, Visual Systems & Editorial Publications',
+    description: 'We build enduring brand ecosystems rooted in typographic proportion, thoughtful tactile materials, and razor-sharp digital guidelines. From initial mark conception to global packaging suites, every design choice solves a strategic brand problem.',
+    deliverables: [
+      'Comprehensive Brand Identity Systems',
+      'Logo Marks, Monograms & Custom Type',
+      'Editorial Books, Annual Reports & Catalogues',
+      'Luxury Packaging & Unboxing Architecture',
+      'Print Collateral & Specialty Finish Specs',
+      'Digital Design Guidelines & Asset Kits',
+    ],
+    tools: ['Adobe Illustrator', 'Adobe InDesign', 'Figma', 'Glyphs', 'Photoshop'],
+    order: 1,
+    published: true,
+  },
+  {
+    id: 'srv-2',
+    code: '02',
+    title: 'Motion Graphics',
+    tagline: 'Kinetic Typography, 3D Brand Motion & Broadcast Idents',
+    description: 'We bring static brands to life with purposeful choreography, physics-informed animation, and rhythmic typography. Our motion work captures attention in fractions of a second on digital billboards, social platforms, and broadcast television.',
+    deliverables: [
+      'Kinetic Typography Packages',
+      '3D Product Explainer Animations',
+      'Broadcast Channel Idents & Lower Thirds',
+      'Logo Motion & Digital Signatures',
+      'UI/UX Interaction Motion Prototyping',
+      'OOH Digital Billboards (3D Naked-Eye)',
+    ],
+    tools: ['After Effects', 'Cinema 4D', 'Blender', 'Houdini', 'Octane Render'],
+    order: 2,
+    published: true,
+  },
+  {
+    id: 'srv-3',
+    code: '03',
+    title: 'Social Media',
+    tagline: 'Editorial Content Engines, Community Architecture & Viral Formats',
+    description: 'We transform brand feeds from forgettable promotional spam into compelling cultural publications. Combining aesthetic integrity with algorithmic precision, we build active communities that advocate and convert.',
+    deliverables: [
+      'Full-Funnel Social Content Architecture',
+      'High-Retention Short-Form Reels / TikToks',
+      'Curated Editorial Feed Curation & Grids',
+      'Community Playbooks & Engagement Strategy',
+      'Influencer & Creator Direction Kits',
+      'Monthly Analytics & Performance Audits',
+    ],
+    tools: ['CapCut Pro', 'Later / Metricool', 'Figma', 'Notion Workspaces', 'Meta Business Suite'],
+    order: 3,
+    published: true,
+  },
+  {
+    id: 'srv-4',
+    code: '04',
+    title: 'Digital Marketing',
+    tagline: 'Omnichannel Performance, Funnel Optimization & Paid Acquisition',
+    description: 'Creative and data working in tandem. We build digital acquisition systems that turn cold attention into loyal customers through rigorous creative testing, high-converting landing pages, and meticulous attribution.',
+    deliverables: [
+      'Meta, Google & LinkedIn Ads Management',
+      'High-Converting Landing Page Design',
+      'Conversion Rate Optimization (CRO)',
+      'Creative Multi-Variant A/B Testing',
+      'Customer Journey Mapping & Funnel Architecture',
+      'Attribution Setup & GA4 Analytics',
+    ],
+    tools: ['Google Ads', 'Meta Ads Manager', 'GA4', 'Mixpanel', 'Hotjar'],
+    order: 4,
+    published: true,
+  },
+  {
+    id: 'srv-5',
+    code: '05',
+    title: 'Video Editing',
+    tagline: 'High-Retention Commercial Cuts, Color Grading & Sound Design',
+    description: 'Post-production with surgical precision. We craft pacing that grips the audience, blending rhythmic cuts, professional DaVinci Resolve color grading, immersive sound design, and clean visual effects.',
+    deliverables: [
+      'Commercial & Brand Campaign Editing',
+      'Master DaVinci Resolve Color Grading',
+      'Multi-Format Deliveries (16:9, 9:16, 1:1, 4:5)',
+      'Subtle VFX Clean-up & Motion Tracking',
+      'Dynamic Subtitles & Kinetic Captions',
+      'Bespoke Sound Design & Audio Sweetening',
+    ],
+    tools: ['DaVinci Resolve Studio', 'Adobe Premiere Pro', 'After Effects', 'iZotope RX', 'Logic Pro'],
+    order: 5,
+    published: true,
+  },
+  {
+    id: 'srv-6',
+    code: '06',
+    title: 'Photography',
+    tagline: 'Architectural, Editorial, Hospitality & High-End Product Photography',
+    description: 'We capture light, material, and human emotion with documentary precision and artistic intent. Every shot is crafted to tell a story of craftsmanship, prestige, and authenticity.',
+    deliverables: [
+      'Commercial & Luxury Product Photography',
+      'Architectural & Interior Spatial Documentation',
+      'Hospitality & Lifestyle Editorial Campaigns',
+      'Executive & Founder Editorial Portraits',
+      'High-Resolution Retouching & Color Profiling',
+      'Comprehensive Image Asset Libraries',
+    ],
+    tools: ['Sony Alpha Cine / FX Series', 'Hasselblad Medium Format', 'Capture One Pro', 'Lightroom Classic'],
+    order: 6,
+    published: true,
+  },
+  {
+    id: 'srv-7',
+    code: '07',
+    title: 'Videography',
+    tagline: 'Cinematography, Brand Documentaries & High-Impact Commercials',
+    description: 'From concept scriptwriting to camera roll and aerial drone cinematography, we produce cinematic films that elevate brand prestige and captivate modern audiences worldwide.',
+    deliverables: [
+      'Hero Brand Commercials & Campaign Films',
+      'Mini-Documentaries & Founder Stories',
+      'Luxury Real Estate & Hospitality Visuals',
+      'Licensed Drone & Aerial FPV Cinematography',
+      'Full Crew Production & Studio Lighting',
+      'Live Event Master Shoots & Recaps',
+    ],
+    tools: ['RED / ARRI / Sony FX6 Cinema Cameras', 'DJI Ronin Gimbals', 'DJI Mavic 3 Cine', 'Aputure Light Storms'],
+    order: 7,
+    published: true,
+  },
+  {
+    id: 'srv-8',
+    code: '08',
+    title: '3D Exhibition Booth',
+    tagline: 'Immersive Spatial Environments, Expo Pavilions & Retail Pop-ups',
+    description: 'We translate brand identity into physical spatial experiences. From 3D conceptual modeling and realistic lighting simulations to construction drawings and material curation, we engineer booths that dominate the expo floor.',
+    deliverables: [
+      '3D Concept Renderings & Walkthroughs',
+      'Structural Floorplans & Spatial Flow Layouts',
+      'Material Selection & Lighting Specifications',
+      'Detailed Technical Drawings for Fabricators',
+      'Interactive LED & AV Technology Integration',
+      'On-Site Build Supervision & Quality Control',
+    ],
+    tools: ['3ds Max', 'Blender', 'Cinema 4D', 'V-Ray / Corona', 'AutoCAD', 'SketchUp Pro'],
+    order: 8,
+    published: true,
+  },
+];
+
+export const initialClients: ClientItem[] = [
+  {
+    id: 'c-1',
+    name: 'Aura Maison de Parfumerie',
+    industry: 'Luxury Goods & Fragrance',
+    year: '2025',
+    featured: true,
+    order: 1,
+    logoUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none"><path d="M24 45L35 15h6l11 30h-6l-2.6-7.5H33.6L31 45h-7zm11.2-12.5h6l-3-9-3 9z" fill="%23FFFFFF"/><circle cx="70" cy="30" r="14" stroke="%23FFFFFF" stroke-width="2.5"/><path d="M96 15v18c0 7 4 12 11 12s11-5 11-12V15h-5v18c0 4-2.5 7-6 7s-6-3-6-7V15h-5z" fill="%23FFFFFF"/><path d="M130 45V15h11c6 0 10 3 10 8.5 0 4-2.5 6.5-6 7.5l7 14h-6l-6.2-12.5H135V45h-5zm5-17.5h6c3.5 0 5.5-1.5 5.5-4.5s-2-4.5-5.5-4.5h-6v9z" fill="%23FFFFFF"/><text x="160" y="44" font-family="sans-serif" font-size="9" font-weight="600" fill="%23E2B714" letter-spacing="3">PARIS</text></svg>`,
+    scope: ['Brand Identity & Monogram', 'Tactile Packaging Suite', 'Flagship Print Collateral', 'Art Direction'],
+    overview: 'Complete strategic rebrand for an artisanal French-Indonesian haute parfumerie, crafting an enduring visual language centered on neoclassical proportions and tactile blind-debossed cotton stocks.',
+    results: '+185% increase in flagship boutique average order value and international distribution across 12 countries.',
+    projectSlug: 'aura-luxury-editorial-identity',
+    websiteUrl: 'https://auraparfum.fr',
+    testimonial: {
+      quote: 'The level of typographic sensitivity and tactile restraint brought to our fragrance identity elevated our retail margins dramatically across Southeast Asia.',
+      author: 'Elena Rostova',
+      role: 'Creative Director',
+    },
+  },
+  {
+    id: 'c-2',
+    name: 'Kinetix Global Technology',
+    industry: 'Enterprise Technology & AI',
+    year: '2025',
+    featured: true,
+    order: 2,
+    logoUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none"><path d="M22 16h6v12l12-12h8L34 29l15 16h-8l-13-14v14h-6V16z" fill="%23FFFFFF"/><path d="M56 16h6v29h-6V16z" fill="%23FFFFFF"/><path d="M68 45V16h6l14 19V16h6v29h-6L74 26v19h-6z" fill="%23FFFFFF"/><path d="M102 16h18v5h-12v7h10v5h-10v7h12v5h-18V16z" fill="%23FFFFFF"/><path d="M126 21h-7v-5h20v5h-7v24h-6V21z" fill="%23FFFFFF"/><path d="M145 16h6v29h-6V16z" fill="%23FFFFFF"/><path d="M156 16h7l6 9 6-9h7l-10 14.5L182 45h-7l-6-9.5-6 9.5h-7l10-14.5L156 16z" fill="%23E2B714"/></svg>`,
+    scope: ['3D Exhibition Pavilion', 'Booth Architecture', 'Interactive LED Walls', 'On-Site Supervision'],
+    overview: 'Engineered a 240m² fluid parametric architectural pavilion for the Smart Cities Biennial, balancing high-capacity visitor throughput with intimate executive consultation chambers.',
+    results: '18,500+ visitors hosted, 3.4x average booth dwell time, and named Best Spatial Exhibit of the Biennial.',
+    projectSlug: 'synapse-3d-exhibition-pavilion',
+    websiteUrl: 'https://kinetixglobal.com',
+    testimonial: {
+      quote: 'Durman Nasar Studio completely redefined how our technological innovations are perceived physically. The 3D exhibition booth became the undisputed centerpiece of the biennial.',
+      author: 'Adrian Wijaya',
+      role: 'VP of Marketing & Global Communications',
+    },
+  },
+  {
+    id: 'c-3',
+    name: 'The Sanctum Villas & Estates',
+    industry: 'Ultra-Luxury Hospitality',
+    year: '2025',
+    featured: true,
+    order: 3,
+    logoUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none"><path d="M18 45V15h24v5H33v25h-5V20H18v25h-5V15h5v30z" fill="none"/><text x="15" y="32" font-family="sans-serif" font-size="16" font-weight="700" fill="%23FFFFFF" letter-spacing="4">SANCTUM</text><text x="16" y="46" font-family="sans-serif" font-size="7" font-weight="600" fill="%23E2B714" letter-spacing="6">VILLAS &amp; ESTATES</text><circle cx="178" cy="30" r="10" stroke="%23FFFFFF" stroke-width="1.5"/><path d="M178 22v16M170 30h16" stroke="%23E2B714" stroke-width="1.5"/></svg>`,
+    scope: ['Cinematic Brand Film', 'Drone Aerial Cinematography', 'Sound Design & Score', 'Luxury OOH Idents'],
+    overview: 'Produced an evocative mini-documentary series in Uluwatu, Bali, capturing the sensory interplay of tropical modernism architecture and Indian Ocean twilight.',
+    results: '1.2M+ organic views with a +320% surge in direct high-season estate bookings.',
+    projectSlug: 'terra-luxury-hospitality-film',
+    websiteUrl: 'https://thesanctumvillas.com',
+    testimonial: {
+      quote: 'Their cinematography and architectural documentation generated more high-net-worth direct bookings in three months than our previous two annual campaigns combined.',
+      author: 'Marcus Sterling',
+      role: 'Managing Partner',
+    },
+  },
+  {
+    id: 'c-4',
+    name: 'Vanguard Media Network',
+    industry: 'Financial Broadcasting',
+    year: '2024',
+    featured: true,
+    order: 4,
+    logoUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none"><path d="M15 15l15 30 15-30h-7l-8 17-8-17h-7z" fill="%23FFFFFF"/><text x="50" y="35" font-family="sans-serif" font-size="15" font-weight="800" fill="%23FFFFFF" letter-spacing="3">VANGUARD</text><rect x="52" y="41" width="130" height="2" fill="%23E2B714"/></svg>`,
+    scope: ['Kinetic Typography Package', 'Broadcast Channel Idents', '3D Segment Openers', 'OOH Billboards'],
+    overview: 'Choreographed a physics-driven kinetic typography and broadcast motion graphics system for Southeast Asia’s premier financial streaming television network.',
+    results: '-65% motion turnaround time on daily news segments and 8.4M regular monthly broadcast viewers.',
+    projectSlug: 'kronos-kinetic-motion-broadcast',
+    websiteUrl: 'https://vanguardmedia.com',
+    testimonial: {
+      quote: 'Fast, precise, and visually commanding. The kinetic broadcast system gave our market reports the velocity and gravitas needed in live finance.',
+      author: 'Diane Chen',
+      role: 'Head of Broadcast Programming',
+    },
+  },
+  {
+    id: 'c-5',
+    name: 'Nexus Financial Ecosystem',
+    industry: 'Fintech & Wealth Management',
+    year: '2024',
+    featured: true,
+    order: 5,
+    logoUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none"><path d="M18 16h6l14 18V16h6v29h-6L24 27v18h-6V16z" fill="%23FFFFFF"/><text x="54" y="36" font-family="sans-serif" font-size="16" font-weight="700" fill="%23FFFFFF" letter-spacing="4">NEXUS</text><circle cx="150" cy="30" r="4" fill="%23E2B714"/><circle cx="165" cy="30" r="6" stroke="%23FFFFFF" stroke-width="1.5"/><circle cx="180" cy="30" r="4" fill="%23E2B714"/></svg>`,
+    scope: ['Conversion Rate Optimization', 'Performance Ads Engine', 'Interactive Simulator UX', 'Attribution Setup'],
+    overview: 'Architected an omnichannel digital acquisition pipeline combining precision programmatic ads with interactive portfolio onboarding simulators for mid-market founders and private wealth clients.',
+    results: '-42% reduction in customer acquisition cost (CAC) and 4.8x verified ROAS across regional channels.',
+    projectSlug: 'nexus-digital-marketing-campaign',
+    websiteUrl: 'https://nexusfintech.io',
+  },
+  {
+    id: 'c-6',
+    name: 'Solstice Electric Automotives',
+    industry: 'Clean Mobility & Automotive',
+    year: '2024',
+    featured: true,
+    order: 6,
+    logoUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none"><circle cx="28" cy="30" r="14" stroke="%23FFFFFF" stroke-width="2"/><path d="M28 16a14 14 0 0 1 0 28" fill="%23E2B714"/><text x="52" y="36" font-family="sans-serif" font-size="15" font-weight="700" fill="%23FFFFFF" letter-spacing="5">SOLSTICE</text><text x="54" y="47" font-family="sans-serif" font-size="6.5" font-weight="600" fill="%23A1A1AA" letter-spacing="4">ELECTRIC MOBILITY</text></svg>`,
+    scope: ['Commercial Launch Film', 'Color Grading Master', 'Dolby 5.1 Sound Design', 'Vertical Cutdowns'],
+    overview: 'Edited and color-graded an adrenaline-fueled commercial launch film for a flagship electric grand tourer, broadcast across international LED screens and premier automotive streaming platforms.',
+    results: '22 million combined views globally and recipient of Silver at the Asian Commercial Craft Awards.',
+    projectSlug: 'solstice-commercial-video-editing',
+    websiteUrl: 'https://solsticemotors.com',
+  },
+  {
+    id: 'c-7',
+    name: 'Atelier Urbanist Architects',
+    industry: 'Architecture & Masterplanning',
+    year: '2024',
+    featured: true,
+    order: 7,
+    logoUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none"><rect x="16" y="16" width="14" height="28" stroke="%23FFFFFF" stroke-width="2"/><rect x="30" y="24" width="14" height="20" stroke="%23E2B714" stroke-width="2"/><text x="56" y="32" font-family="sans-serif" font-size="13" font-weight="700" fill="%23FFFFFF" letter-spacing="3">ATELIER</text><text x="56" y="45" font-family="sans-serif" font-size="10" font-weight="500" fill="%23A1A1AA" letter-spacing="4">URBANIST</text></svg>`,
+    scope: ['Architectural Photography', 'Interior Documentation', 'Editorial Monograph Book', 'Exhibition Curation'],
+    overview: 'Created an editorial photographic series capturing a brutalist concrete cultural center in Central Java, exploring natural light cast through massive geometric voids.',
+    results: 'Featured in Dezeen and ArchDaily; exhibited at the Jakarta Architectural Triennale 2024.',
+    projectSlug: 'monolith-architectural-photography',
+    websiteUrl: 'https://atelierurbanist.com',
+  },
+  {
+    id: 'c-8',
+    name: 'Nocturne Craft Roasters',
+    industry: 'Specialty Lifestyle & Beverage',
+    year: '2024',
+    featured: true,
+    order: 8,
+    logoUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none"><path d="M28 16a14 14 0 1 0 0 28c-4 0-10-3-12-8 5 0 10-3 12-7s0-8 0-13z" fill="%23E2B714"/><text x="48" y="34" font-family="sans-serif" font-size="14" font-weight="800" fill="%23FFFFFF" letter-spacing="4">NOCTURNE</text><text x="50" y="45" font-family="sans-serif" font-size="7" font-weight="500" fill="%23A1A1AA" letter-spacing="5">ROASTERS</text></svg>`,
+    scope: ['Editorial Social Engine', 'ASMR Craft Reels', 'Packaging Identity', 'Coffee Subscription Growth'],
+    overview: 'Constructed an algorithmic-first social media ecosystem and editorial grid that transformed an independent atelier into a viral cultural touchpoint across Instagram and TikTok.',
+    results: '+480% organic follower surge and 4.8M content impressions in 90 days.',
+    projectSlug: 'nocturne-social-media-strategy',
+    websiteUrl: 'https://nocturnecoffee.com',
+  },
+];
+
+export const initialEditorialInsights: EditorialInsight[] = [
+  {
+    id: 'insight-1',
+    slug: 'the-architecture-of-sensation-spatial-pavilions',
+    title: 'The Architecture of Sensation: Why Spatial 3D Pavilions Outlive Ephemeral Digital Feeds',
+    excerpt: 'In an attention economy dominated by fleeting micro-content, physical and sensory spatial architecture remains the definitive brand anchor for visionary market leaders.',
+    content: `In the contemporary creative landscape, visual impressions are consumed and discarded at sub-second intervals. Brands wage ferocious bidding wars for three-second impressions on glass smartphone screens, only to be forgotten with the flick of a thumb. 
+
+Yet, when a human being walks into a bespoke three-dimensional spatial pavilion—where lighting conditions are precisely choreographed, materials carry tangible acoustic density, and sculptural volumes command physical presence—the neurological response changes entirely.
+
+### 1. The Principle of Volumetric Presence
+A screen displays an image; a spatial pavilion envelopes an observer. Volumetric brand presence operates on somatic memory. When designing pavilions such as the Synapse 3D Exhibition Pavilion, our studio does not approach the structure merely as a display booth. We treat it as an autonomous architectural micro-world. 
+
+The compression and expansion of space, the interplay between matte brutalist concrete finishes and warm indirect lighting, and the controlled acoustic dampening immediately recalibrate the visitor’s pulse. Within thirty seconds, the visitor has ceased to be an idle observer and has become an inhabitant.
+
+### 2. Physicality as the Ultimate Scarcity
+Digital assets can be reproduced infinitely at zero marginal cost. Physical craftsmanship, by contrast, possesses unassailable scarcity. When a corporate client invests in custom fabricated double-curved timber fins, micro-textured acoustic membranes, and millimeter-precise structural joints, the subconscious signal to enterprise partners is unambiguous: this organization builds for permanence.
+
+> "A screen displays an image; a spatial pavilion envelopes an observer. Volumetric presence operates on somatic memory, transforming casual observers into invested inhabitants."
+
+### 3. The Symbiosis Between Physical and Digital
+The objective of high-end spatial architecture is never to reject digital technology, but to give it a physical home. Integrated micro-LED arrays, ambient kinetic projections, and directional spatial audio function best when they are recessed into architectural materials rather than bolted on as cheap commercial televisions.
+
+When spatial design, kinetic motion, and tactile identity operate in unison, the resulting brand equity does not depreciate when the exhibition concludes. It solidifies into legend.`,
+    category: 'Spatial 3D & Architecture',
+    author: {
+      name: 'Durman Nasar',
+      role: 'Creative Director & Founder',
+    },
+    coverImage: '/src/assets/images/project_exhibition_booth_1790391286709.jpg',
+    readTime: '6 min read',
+    publishedAt: '2026-09-18T10:00:00Z',
+    tags: ['Spatial Design', '3D Architecture', 'Brand Experience', 'Exhibition Design'],
+    isFeatured: true,
+    status: 'published',
+    order: 1,
+  },
+  {
+    id: 'insight-2',
+    slug: 'kinetic-restraint-choreographing-motion-graphics',
+    title: 'Kinetic Restraint: Choreographing Motion Graphics Without Visual Noise',
+    excerpt: 'Motion design is frequently mistaken for ceaseless movement. The most authoritative visual identities command prestige through strategic pauses, calculated mass, and typographic physics.',
+    content: `The modern digital landscape is overrun with frenetic animation. Logos flip, rotate, explode, and reconstruct themselves in endless gymnastics. Yet, when every element on a screen screams for attention at maximum velocity, the collective result is not dynamism—it is visual white noise.
+
+At Durman Nasar Studio, our kinetic philosophy centers on a deceptively simple discipline: kinetic restraint.
+
+### 1. Establishing Gravitational Mass in Type
+Static typography communicates through proportion, kerning, and baseline rhythm. Kinetic typography introduces physics: mass, friction, inertia, and momentum. 
+
+When a luxury editorial headline enters a frame, its deceleration curve determines its prestige. A cheap transition bounces abruptly; an authoritative headline arrives with the deliberate momentum of heavy hot-metal type pressing into damp cotton paper. The subtle cubic-bezier easing curve communicates more about brand prestige than the literal words themselves.
+
+### 2. The Power of the Negative Pause
+In musical composition, the rests between notes create the melody. In motion design, the moments of stillness are where comprehension happens. If an audience cannot absorb a frame before the next transition fires, retention drops to zero.
+
+We apply a strict "breathing ratio" to all broadcast idents and kinetic campaign cutdowns: for every 1.5 seconds of complex choreography, there must follow at least 1.0 second of crystalline, static poise.
+
+> "If every element on the screen screams for attention at maximum velocity, the result is not dynamism—it is visual white noise. Prestige lives in the deliberate pause."
+
+### 3. Rhythmic Synchronization with Sound Design
+Visual motion severed from audio is only half a stimulus. High-end motion graphics require synchronous sound design created concurrently, not slapped on in post-production. A subtle sub-bass thud upon graphic impact, the delicate mechanical click of a letterform locking into alignment, or an airy atmospheric swell transform a two-dimensional animation into a visceral sensory event.`,
+    category: 'Motion & Animation',
+    author: {
+      name: 'Durman Nasar',
+      role: 'Creative Director & Founder',
+    },
+    coverImage: '/src/assets/images/project_cinematography_still_1790391310888.jpg',
+    readTime: '5 min read',
+    publishedAt: '2026-09-10T09:00:00Z',
+    tags: ['Motion Graphics', 'Kinetic Typography', 'Creative Direction', 'Pacing'],
+    isFeatured: true,
+    status: 'published',
+    order: 2,
+  },
+  {
+    id: 'insight-3',
+    slug: 'directing-the-machine-generative-ai-creative-direction',
+    title: 'Directing the Machine: Generative AI as an Optical Co-Pilot in Creative Direction',
+    excerpt: 'Artificial intelligence cannot substitute discernment. How our studio treats computational synthesis as a high-speed lens for rapid world-building and avant-garde concepting.',
+    content: `The creative industry is undergoing its most profound technical realignment since the introduction of desktop publishing software in the late 1980s. Heated debates persist between alarmist purists who view generative models as the death of human craft, and technocrats who believe machines will render human directors obsolete.
+
+Both positions misunderstand the fundamental nature of creative direction.
+
+### 1. The Difference Between Generation and Discernment
+A machine can generate ten thousand surreal variations of a glass building suspended above a volcanic plateau in under two minutes. What the machine cannot do—and will never do—is determine which of those ten thousand iterations possesses genuine emotional resonance, cultural relevance, and strategic defensibility for a client.
+
+Taste is not algorithmic. Taste is an accumulation of historical memory, visceral intuition, philosophical stance, and human empathy. Generative models produce raw optical material; the creative director curates, refines, discards, and synthesizes that material into a coherent vision.
+
+### 2. Accelerating Concept Prototyping
+In traditional workflows, visualizing a high-concept architectural pavilion or a complex cinematic commercial scene required weeks of preliminary matte painting and rough 3D grey-boxing before presenting to executive stakeholders.
+
+With custom-tuned LoRA models and multi-stage prompt architecture, our studio can test lighting moods, material finishes, and spatial compositions in hours. This does not shorten the design process; it dramatically expands the exploratory horizon. We explore fifty aesthetic paths before selecting the singular trajectory that solves the client's strategic brief.
+
+> "A machine can generate ten thousand images in minutes. What it cannot do is determine which single frame possesses emotional resonance and strategic defensibility."
+
+### 3. The Hybrid Future
+The future of avant-garde creative studios is hybrid. We combine computational generative concepting with master-level human typography, physical materials testing, CAD structural engineering, and cinematic color grading in DaVinci Resolve. The machine is our optical telescope; human discernment remains at the helm.`,
+    category: 'AI & Computational Synthesis',
+    author: {
+      name: 'Durman Nasar',
+      role: 'Creative Director & Founder',
+    },
+    coverImage: '/src/assets/images/hero_studio_showcase_1790391271997.jpg',
+    readTime: '7 min read',
+    publishedAt: '2026-08-28T14:30:00Z',
+    tags: ['Generative AI', 'Creative Direction', 'Concept Prototyping', 'Future of Design'],
+    isFeatured: true,
+    status: 'published',
+    order: 3,
+  },
+  {
+    id: 'insight-4',
+    slug: 'typographic-permanence-crafting-editorial-identities',
+    title: 'Typographic Permanence: Crafting Editorial Identities Beyond Algorithmic Trends',
+    excerpt: 'Why classical proportion, tactile material choice, and bespoke letterforms resist obsolescence far longer than fleeting social media aesthetic waves.',
+    content: `Every few months, the internet crowns a new visual trend: neo-brutalism, chrome Y2K typography, acid-gradient maximalism, or austere tech minimalism. Eager to appear current, numerous brands redesign their visual systems to conform to the prevailing social feed aesthetic.
+
+Within eighteen months, these brands appear irredeemably dated.
+
+### 1. The Trap of Algorithmic Homogenization
+When design decisions are driven by what garners micro-engagement on social media grids, brands inevitably converge upon the same aesthetic tropes. Platforms reward novelty, but corporate enterprise demands stability and enduring authority.
+
+When we craft a brand identity system—such as the luxury editorial suite for Aura or the institutional system for Atelier Urbanist—we deliberately anchor the visual grammar in centuries of typographic proportion rather than platform trends.
+
+### 2. The Weight of Custom Monograms and Glyphs
+A brand mark designed from an off-the-shelf geometric sans font is an invitation to be forgotten. Bespoke letterforms, custom-drawn ligature details, and proportional balance calibrated for both micro-favicons and monumental building facades create a defensible intellectual property moat.
+
+When a client holds a business card or exhibition monograph with blind debossed type pressed deeply into 600gsm archival cotton paper, the communication is instant and permanent.
+
+### 3. Longevity as the Ultimate Sustainability
+The most sustainable design choice a company can make is to commission a brand identity that will not require replacement in three years. Enduring typography gathers cultural patina and builds compound brand equity over decades.`,
+    category: 'Brand Identity & Design',
+    author: {
+      name: 'Durman Nasar',
+      role: 'Creative Director & Founder',
+    },
+    coverImage: '/src/assets/images/project_editorial_branding_1790391299935.jpg',
+    readTime: '4 min read',
+    publishedAt: '2026-08-14T11:00:00Z',
+    tags: ['Typography', 'Brand Identity', 'Editorial Design', 'Longevity'],
+    isFeatured: false,
+    status: 'published',
+    order: 4,
+  },
+];
+
+

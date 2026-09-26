@@ -1,0 +1,6 @@
+{
+  "name": "Durman Nasar Studio",
+  "description": "Multidisciplinary creative studio and agency specializing in Graphic Design, Motion Graphics, Digital Marketing, Video, Photography, and 3D Exhibition Booth Design.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

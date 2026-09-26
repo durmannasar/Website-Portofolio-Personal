@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net - Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email == 'durman.nasar@gmail.com' && request.auth.token.email_verified == true) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    // Projects: Public can view; Admins can manage
+    match /projects/{projectId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin() && isValidId(projectId);
+    }
+
+    // Services: Public can view; Admins can manage
+    match /services/{serviceId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin() && isValidId(serviceId);
+    }
+
+    // Editorial Insights: Public can view; Admins can manage
+    match /insights/{insightId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin() && isValidId(insightId);
+    }
+
+    // Clients & Brands: Public can view; Admins can manage
+    match /clients/{clientId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin() && isValidId(clientId);
+    }
+
+    // Hero Sliders: Public can view; Admins can manage
+    match /sliders/{sliderId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin() && isValidId(sliderId);
+    }
+
+    // Settings: Public can view; Admins can manage
+    match /settings/{settingId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin() && isValidId(settingId);
+    }
+
+    // Inquiries: Anyone can submit a project brief; Only Admins can view and manage
+    match /inquiries/{inquiryId} {
+      allow create: if isValidId(inquiryId) &&
+        incoming().name is string && incoming().name.size() > 0 && incoming().name.size() <= 200 &&
+        incoming().email is string && incoming().email.size() > 0 && incoming().email.size() <= 200 &&
+        incoming().description is string && incoming().description.size() <= 5000;
+      allow get, list, update, delete: if isAdmin() && isValidId(inquiryId);
+    }
+
+    // Admins registry
+    match /admins/{adminId} {
+      allow read, write: if isAdmin() && isValidId(adminId);
+    }
+  }
+}
