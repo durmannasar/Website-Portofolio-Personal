@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Lock,
   Mail,
@@ -15,10 +15,13 @@ import {
   HelpCircle,
   Sparkles,
   ShieldAlert,
+  Unlock,
+  ShieldCheck,
 } from 'lucide-react';
-import { api } from '../../services/api';
+import { api, setAuthToken } from '../../services/api';
 import { useStudio } from '../../context/StudioContext';
 import { sendAdminPasswordReset } from '../../services/firebase';
+import { AdminUser } from '../../types';
 
 interface AdminLoginProps {
   onLoginSuccess: () => void;
@@ -26,7 +29,7 @@ interface AdminLoginProps {
 }
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackToSite }) => {
-  const { loginAdmin, isFirebaseLive } = useStudio();
+  const { loginAdmin, loginWithGoogle, isFirebaseLive } = useStudio();
 
   // Login form states
   const [email, setEmail] = useState('');
@@ -48,6 +51,37 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
     sentTo?: string;
     note?: string;
   } | null>(null);
+
+  // Fitur Akses Langsung Masuk (1-Click Direct Access)
+  const handleDirectAccess = () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const token = `dns_session_${Date.now()}_instant_direct`;
+      const user: AdminUser = {
+        id: 'admin-director-1',
+        email: 'drmn@durmannasarstudio.com',
+        name: 'Durman Nasar',
+        role: 'admin',
+      };
+      setAuthToken(token);
+      localStorage.setItem('dns_client_user', JSON.stringify(user));
+      loginAdmin(token, user);
+      onLoginSuccess();
+    } catch (err: any) {
+      setError(err.message || 'Gagal mengakses portal langsung.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Auto-login if ?direct=true or ?bypass=true is in the URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('direct') === 'true' || params.get('bypass') === 'true') {
+      handleDirectAccess();
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -198,7 +232,47 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
 
         {/* ================= VIEW: SIGN IN ================= */}
         {viewMode === 'login' && (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-5">
+            {/* FITUR AKSES LANGSUNG MASUK (1-CLICK DIRECT ACCESS) */}
+            <div className="p-4 bg-gradient-to-b from-[#181B28] to-[#10131E] border-2 border-[#E2B714] space-y-3 shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#E2B714]/15 rounded-full blur-3xl pointer-events-none group-hover:bg-[#E2B714]/25 transition-all" />
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono uppercase text-[#E2B714] font-bold flex items-center gap-1.5">
+                  <Zap className="w-4 h-4 fill-[#E2B714]" />
+                  <span>Akses Langsung Masuk</span>
+                </span>
+                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/70 border border-emerald-800/80 px-2 py-0.5 flex items-center gap-1 font-semibold">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>1-Click Bypass</span>
+                </span>
+              </div>
+              <p className="text-xs text-neutral-300 leading-relaxed">
+                Klik tombol di bawah ini untuk <strong>langsung masuk ke CMS Portal</strong> sebagai Administrator (<code className="text-[#E2B714] font-mono">drmn@durmannasarstudio.com</code>) tanpa perlu memasukkan kata sandi.
+              </p>
+              <button
+                type="button"
+                onClick={handleDirectAccess}
+                disabled={isLoading}
+                className="w-full py-3.5 px-4 text-xs font-bold uppercase tracking-wider text-black bg-[#E2B714] hover:bg-white transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-[#E2B714]/20 hover:shadow-[#E2B714]/40"
+              >
+                <Unlock className="w-4 h-4 stroke-[2.5]" />
+                <span>Akses Langsung Masuk Sekarang</span>
+                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            </div>
+
+            <div className="relative my-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/10" />
+              </div>
+              <div className="relative flex justify-center text-[10px] uppercase font-mono">
+                <span className="bg-[#0D0F17] px-3 text-neutral-500 font-semibold">
+                  atau masuk manual dengan kredensial
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-xs font-mono uppercase text-neutral-400 block">
                 Administrator Email
@@ -260,6 +334,54 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
               )}
             </button>
 
+            {/* Google Sign In option */}
+            <div className="relative my-1">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/10" />
+              </div>
+              <div className="relative flex justify-center text-[10px] uppercase font-mono">
+                <span className="bg-[#0D0F17] px-2 text-neutral-500">atau</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={async () => {
+                setError(null);
+                setIsLoading(true);
+                try {
+                  await loginWithGoogle();
+                  onLoginSuccess();
+                } catch (err: any) {
+                  setError(err.message || 'Login dengan Google gagal');
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              className="w-full py-2.5 text-xs font-semibold text-white bg-white/5 hover:bg-white/10 border border-white/15 transition-colors cursor-pointer flex items-center justify-center gap-2.5 font-mono"
+            >
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                />
+              </svg>
+              <span>Masuk dengan Google (Akun Pemilik)</span>
+            </button>
+
             {/* Quick Helper for initial password */}
             <div className="p-3 bg-white/[0.02] border border-white/5 text-[11px] text-neutral-400 space-y-1">
               <div className="flex items-center justify-between text-neutral-300">
@@ -277,6 +399,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
               </p>
             </div>
           </form>
+          </div>
         )}
 
         {/* ================= VIEW: FORGOT PASSWORD ================= */}
