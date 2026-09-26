@@ -93,7 +93,14 @@ export const api = {
   },
 
   async requestPasswordReset(email: string) {
-    return fetchJson<{ success: boolean; message: string }>('/api/auth/forgot-password', {
+    return fetchJson<{
+      success: boolean;
+      message: string;
+      securityCode?: string;
+      primaryEmail?: string;
+      recoveryEmail?: string;
+      instructions?: string;
+    }>('/api/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });

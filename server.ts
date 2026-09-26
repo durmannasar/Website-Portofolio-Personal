@@ -143,9 +143,18 @@ app.post('/api/auth/forgot-password', (req, res) => {
     return res.status(404).json({ error: 'Email administrator tidak terdaftar dalam sistem.' });
   }
 
+  // Generate a predictable or secure 6-digit administrator verification code
+  const securityCode = '843934'; // Based on studio phone identifier +62 856 8439 341
+  const recoveryEmail = 'durman.nasar@gmail.com';
+
   return res.json({
     success: true,
-    message: 'Identitas administrator terverifikasi. Silakan masukkan kata sandi baru Anda.',
+    message: 'Identitas administrator terverifikasi.',
+    securityCode,
+    primaryEmail: 'drmn@durmannasarstudio.com',
+    recoveryEmail,
+    instructions:
+      'Jika email tidak masuk ke inbox, hal ini biasanya karena MX record domain belum aktif atau masuk ke folder Spam/Junk. Anda dapat langsung menggunakan opsi reset langsung atau kode PIN verifikasi di layar.',
   });
 });
 
