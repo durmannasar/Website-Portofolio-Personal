@@ -92,6 +92,20 @@ export const api = {
     });
   },
 
+  async requestPasswordReset(email: string) {
+    return fetchJson<{ success: boolean; message: string }>('/api/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  async resetPassword(email: string, newPassword: string) {
+    return fetchJson<{ success: boolean; message: string }>('/api/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, newPassword }),
+    });
+  },
+
   logout() {
     clearAuthToken();
   },

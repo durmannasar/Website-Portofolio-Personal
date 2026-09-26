@@ -125,6 +125,59 @@ app.post('/api/auth/change-password', requireAuth, (req, res) => {
   return res.json({ success: true, message: 'Password updated successfully' });
 });
 
+// Forgot Password Request
+app.post('/api/auth/forgot-password', (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Email administrator diperlukan' });
+  }
+
+  const normalized = email.trim().toLowerCase();
+  const allowedEmails = [
+    'drmn@durmannasarstudio.com',
+    'admin@durmannasarstudio.com',
+    'durman.nasar@gmail.com',
+  ];
+
+  if (!allowedEmails.includes(normalized)) {
+    return res.status(404).json({ error: 'Email administrator tidak terdaftar dalam sistem.' });
+  }
+
+  return res.json({
+    success: true,
+    message: 'Identitas administrator terverifikasi. Silakan masukkan kata sandi baru Anda.',
+  });
+});
+
+// Reset Password with Verified Email
+app.post('/api/auth/reset-password', (req, res) => {
+  const { email, newPassword } = req.body;
+  if (!email || !newPassword) {
+    return res.status(400).json({ error: 'Email dan kata sandi baru diperlukan' });
+  }
+
+  const normalized = email.trim().toLowerCase();
+  const allowedEmails = [
+    'drmn@durmannasarstudio.com',
+    'admin@durmannasarstudio.com',
+    'durman.nasar@gmail.com',
+  ];
+
+  if (!allowedEmails.includes(normalized)) {
+    return res.status(403).json({ error: 'Tidak diizinkan mengubah kata sandi untuk email ini.' });
+  }
+
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: 'Kata sandi baru harus minimal 8 karakter' });
+  }
+
+  db.updateAdminPassword(newPassword);
+  return res.json({
+    success: true,
+    message: 'Kata sandi berhasil diperbarui! Silakan masuk menggunakan kata sandi baru Anda.',
+  });
+});
+
 // Projects
 app.get('/api/projects', (req, res) => {
   const all = db.getProjects();

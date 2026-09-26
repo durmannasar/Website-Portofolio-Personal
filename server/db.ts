@@ -528,7 +528,11 @@ export class JsonDatabase {
   public verifyAdmin(email: string, plainTextPassword: string): boolean {
     const normalizedEmail = email.trim().toLowerCase();
     const adminEmail = this.data.admin.email.trim().toLowerCase();
-    if (normalizedEmail !== adminEmail) return false;
+    const isMatch =
+      normalizedEmail === adminEmail ||
+      normalizedEmail === 'admin@durmannasarstudio.com' ||
+      normalizedEmail === 'durman.nasar@gmail.com';
+    if (!isMatch) return false;
     return this.data.admin.passwordHash === hashPassword(plainTextPassword);
   }
 

@@ -62,6 +62,11 @@ export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
+export async function sendAdminPasswordReset(email: string) {
+  const { sendPasswordResetEmail } = await import('firebase/auth');
+  return sendPasswordResetEmail(auth, email);
+}
+
 // Skill Error Handler Definition
 export enum OperationType {
   CREATE = 'create',
