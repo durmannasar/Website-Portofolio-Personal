@@ -139,6 +139,8 @@ export async function testConnection(): Promise<boolean> {
 let isSeeding = false;
 export async function seedInitialDataIfEmpty(): Promise<void> {
   if (isSeeding) return;
+  // Seeding requires admin permissions in Firestore. Only run if an admin is authenticated.
+  if (!auth.currentUser) return;
   isSeeding = true;
   try {
     const projectsSnap = await getDocs(collection(db, 'projects'));
@@ -355,6 +357,7 @@ export function subscribeToFirestore(listeners: FirestoreListeners): () => void 
 // Direct Firestore Mutators (Used by CMS to guarantee live synchronization)
 export async function saveProjectToFirestore(project: Project): Promise<void> {
   const path = `projects/${project.id}`;
+  if (!auth.currentUser) return;
   try {
     await setDoc(doc(db, 'projects', project.id), project, { merge: true });
   } catch (error) {
@@ -364,6 +367,7 @@ export async function saveProjectToFirestore(project: Project): Promise<void> {
 
 export async function deleteProjectFromFirestore(id: string): Promise<void> {
   const path = `projects/${id}`;
+  if (!auth.currentUser) return;
   try {
     await deleteDoc(doc(db, 'projects', id));
   } catch (error) {
@@ -373,6 +377,7 @@ export async function deleteProjectFromFirestore(id: string): Promise<void> {
 
 export async function saveServiceToFirestore(service: ServiceItem): Promise<void> {
   const path = `services/${service.id}`;
+  if (!auth.currentUser) return;
   try {
     await setDoc(doc(db, 'services', service.id), service, { merge: true });
   } catch (error) {
@@ -382,6 +387,7 @@ export async function saveServiceToFirestore(service: ServiceItem): Promise<void
 
 export async function deleteServiceFromFirestore(id: string): Promise<void> {
   const path = `services/${id}`;
+  if (!auth.currentUser) return;
   try {
     await deleteDoc(doc(db, 'services', id));
   } catch (error) {
@@ -391,6 +397,7 @@ export async function deleteServiceFromFirestore(id: string): Promise<void> {
 
 export async function saveInsightToFirestore(insight: EditorialInsight): Promise<void> {
   const path = `insights/${insight.id}`;
+  if (!auth.currentUser) return;
   try {
     await setDoc(doc(db, 'insights', insight.id), insight, { merge: true });
   } catch (error) {
@@ -400,6 +407,7 @@ export async function saveInsightToFirestore(insight: EditorialInsight): Promise
 
 export async function deleteInsightFromFirestore(id: string): Promise<void> {
   const path = `insights/${id}`;
+  if (!auth.currentUser) return;
   try {
     await deleteDoc(doc(db, 'insights', id));
   } catch (error) {
@@ -409,6 +417,7 @@ export async function deleteInsightFromFirestore(id: string): Promise<void> {
 
 export async function saveClientToFirestore(client: ClientItem): Promise<void> {
   const path = `clients/${client.id}`;
+  if (!auth.currentUser) return;
   try {
     await setDoc(doc(db, 'clients', client.id), client, { merge: true });
   } catch (error) {
@@ -418,6 +427,7 @@ export async function saveClientToFirestore(client: ClientItem): Promise<void> {
 
 export async function deleteClientFromFirestore(id: string): Promise<void> {
   const path = `clients/${id}`;
+  if (!auth.currentUser) return;
   try {
     await deleteDoc(doc(db, 'clients', id));
   } catch (error) {
@@ -427,6 +437,7 @@ export async function deleteClientFromFirestore(id: string): Promise<void> {
 
 export async function saveSliderToFirestore(slider: HeroSlide): Promise<void> {
   const path = `sliders/${slider.id}`;
+  if (!auth.currentUser) return;
   try {
     await setDoc(doc(db, 'sliders', slider.id), slider, { merge: true });
   } catch (error) {
@@ -436,6 +447,7 @@ export async function saveSliderToFirestore(slider: HeroSlide): Promise<void> {
 
 export async function deleteSliderFromFirestore(id: string): Promise<void> {
   const path = `sliders/${id}`;
+  if (!auth.currentUser) return;
   try {
     await deleteDoc(doc(db, 'sliders', id));
   } catch (error) {
@@ -445,6 +457,7 @@ export async function deleteSliderFromFirestore(id: string): Promise<void> {
 
 export async function saveSettingsToFirestore(settings: SiteSettings): Promise<void> {
   const path = 'settings/site';
+  if (!auth.currentUser) return;
   try {
     await setDoc(doc(db, 'settings', 'site'), settings, { merge: true });
   } catch (error) {
