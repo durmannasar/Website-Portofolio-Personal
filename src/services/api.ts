@@ -561,6 +561,33 @@ export const api = {
     return updated;
   },
 
+  async uploadFavicon(file: File): Promise<{ success: boolean; fileUrl: string; settings: SiteSettings }> {
+    const token = getAuthToken();
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch('/api/settings/favicon-upload', {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Gagal mengunggah file logo/favicon');
+    }
+    const data = await res.json();
+    if (data.settings) {
+      saveSettingsToFirestore(data.settings).catch((err) =>
+        console.warn('Firestore settings update sync note:', err)
+      );
+    }
+    return data;
+  },
+
   // Dashboard Stats
   async getStats(): Promise<{
     totalProjects: number;

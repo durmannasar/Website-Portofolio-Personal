@@ -15,6 +15,7 @@ import {
   Activity,
   Search,
   BookOpen,
+  Sparkles,
 } from 'lucide-react';
 import { useStudio } from '../../context/StudioContext';
 import { api } from '../../services/api';
@@ -171,6 +172,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateTab })
             <div>
               <span className="text-xs font-bold text-white block">Upload Media</span>
               <span className="text-[11px] text-neutral-500 font-mono">JPG / PNG / WebP</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => onNavigateTab('logo-favicon')}
+            className="p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#E2B714] text-left transition-colors cursor-pointer space-y-2 group"
+          >
+            <Sparkles className="w-5 h-5 text-indigo-400 group-hover:scale-110 transition-transform" />
+            <div>
+              <span className="text-xs font-bold text-white block">Logo & Favicon</span>
+              <span className="text-[11px] text-neutral-500 font-mono">PNG / JPG / SVG</span>
             </div>
           </button>
 

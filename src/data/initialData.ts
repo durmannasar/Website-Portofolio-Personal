@@ -34,6 +34,9 @@ export const initialSiteSettings: SiteSettings = {
   indexingStatus: 'index, follow',
   robotsTxtCustom: 'User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /cpanel\nDisallow: /api/\n\nSitemap: https://www.durmannasarstudio.com/sitemap.xml',
   contentProtection: defaultContentProtection,
+  faviconUrl: '/favicon.svg',
+  logoUrl: '/favicon.svg',
+  appleTouchIconUrl: '/apple-touch-icon.png',
   socials: {
     instagram: 'https://instagram.com/durmannasar',
     linkedin: 'https://linkedin.com/in/durmannasar',

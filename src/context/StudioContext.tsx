@@ -29,6 +29,21 @@ import {
   subscribeAuthState,
 } from '../services/firebase';
 
+export const applyFaviconToDocument = (url?: string) => {
+  if (!url || typeof document === 'undefined') return;
+  const linkSvg = document.querySelector("link[type='image/svg+xml']") as HTMLLinkElement | null;
+  const linkPng = document.querySelector("link[type='image/png']") as HTMLLinkElement | null;
+  const linkIcon = document.querySelector("link[rel='icon']:not([type])") as HTMLLinkElement | null;
+  const linkApple = document.querySelector("link[rel='apple-touch-icon']") as HTMLLinkElement | null;
+
+  const versionedUrl = url.includes('?') ? url : `${url}?v=${Date.now()}`;
+
+  if (linkSvg && url.endsWith('.svg')) linkSvg.href = versionedUrl;
+  if (linkPng) linkPng.href = versionedUrl;
+  if (linkIcon) linkIcon.href = versionedUrl;
+  if (linkApple) linkApple.href = versionedUrl;
+};
+
 export interface LightboxState {
   images: string[];
   currentIndex: number;
@@ -241,6 +256,12 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   // Bootstrap Firebase & Real-time Synchronization
+  useEffect(() => {
+    if (settings.faviconUrl) {
+      applyFaviconToDocument(settings.faviconUrl);
+    }
+  }, [settings.faviconUrl]);
+
   useEffect(() => {
     let unsubscribeFirestore: (() => void) | null = null;
 

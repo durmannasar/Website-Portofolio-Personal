@@ -27,7 +27,7 @@ export const AdminSEO: React.FC = () => {
   const [formData, setFormData] = useState<Partial<SiteSettings>>({
     seoTitle:
       settings.seoTitle ||
-      'Durman Nasar Studio – Multidisciplinary Creative Studio & Agency',
+      'Durman Nasar Studio',
     seoDescription:
       settings.seoDescription ||
       'Creative Ideas. Strategic Design. Meaningful Experiences. Specialized in Graphic Design, Motion, Video, Photography, Digital Marketing, and 3D Exhibition Booth Design.',
@@ -286,7 +286,7 @@ export const AdminSEO: React.FC = () => {
               </div>
 
               <h3 className="text-[#8ab4f8] hover:underline cursor-pointer text-lg font-sans font-medium line-clamp-1">
-                {formData.seoTitle || 'Durman Nasar Studio – Multidisciplinary Creative Studio & Agency'}
+                {formData.seoTitle || 'Durman Nasar Studio'}
               </h3>
 
               <p className="text-[#bdc1c6] text-xs font-sans leading-relaxed line-clamp-2">

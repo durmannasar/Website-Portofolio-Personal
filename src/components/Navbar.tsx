@@ -35,11 +35,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#090A0F]/90 backdrop-blur-md border-b border-white/10 transition-all duration-200">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        {/* Zone 1: Single text element wordmark */}
+        {/* Zone 1: Brand mark + text wordmark */}
         <button
           onClick={() => handleLinkClick('/')}
-          className="text-left group cursor-pointer focus:outline-none"
+          className="text-left group cursor-pointer focus:outline-none flex items-center gap-3"
         >
+          <img
+            src="/favicon.svg"
+            alt="Durman Nasar Studio logo emblem"
+            className="w-8 h-8 rounded-sm object-contain group-hover:scale-105 transition-transform"
+          />
           <span className="font-display text-xl sm:text-2xl font-bold tracking-tight text-white group-hover:text-[#E2B714] transition-colors whitespace-nowrap">
             Durman Nasar Studio
           </span>

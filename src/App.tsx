@@ -34,6 +34,7 @@ const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics').then((m
 const AdminSEO = lazy(() => import('./pages/admin/AdminSEO').then((m) => ({ default: m.AdminSEO })));
 const AdminInsights = lazy(() => import('./pages/admin/AdminInsights').then((m) => ({ default: m.AdminInsights })));
 const AdminContentProtection = lazy(() => import('./pages/admin/AdminContentProtection').then((m) => ({ default: m.AdminContentProtection })));
+const AdminLogoFavicon = lazy(() => import('./pages/admin/AdminLogoFavicon').then((m) => ({ default: m.AdminLogoFavicon })));
 
 function AdminLoadingFallback() {
   return (
@@ -62,6 +63,7 @@ function AppContent() {
   useContentProtection({ isPublic });
 
   useEffect(() => {
+    document.title = 'Durman Nasar Studio';
     const handlePopState = () => {
       setCurrentPath(window.location.pathname || '/');
     };
@@ -102,6 +104,7 @@ function AppContent() {
           {adminTab === 'dashboard' && <AdminDashboard onNavigateTab={(t) => setAdminTab(t)} />}
           {adminTab === 'projects' && <AdminProjects />}
           {adminTab === 'media' && <AdminMedia />}
+          {adminTab === 'logo-favicon' && <AdminLogoFavicon />}
           {adminTab === 'sliders' && <AdminSliders />}
           {adminTab === 'services' && <AdminServices />}
           {adminTab === 'insights' && <AdminInsights />}

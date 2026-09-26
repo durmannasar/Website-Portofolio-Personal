@@ -19,6 +19,7 @@ import {
   BookOpen,
   RefreshCw,
   Zap,
+  Sparkles,
 } from 'lucide-react';
 import { useStudio } from '../../context/StudioContext';
 import { api } from '../../services/api';
@@ -93,6 +94,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         },
         { id: 'sliders', label: 'Hero Sliders', icon: Sliders },
         { id: 'media', label: 'Media Library', icon: ImageIcon },
+        {
+          id: 'logo-favicon',
+          label: 'Logo & Favicon',
+          sublabel: 'Upload (PNG, JPG, SVG)',
+          icon: Sparkles,
+          badge: 'DNS',
+        },
         { id: 'clients', label: 'Clients & Brands', icon: Users },
         {
           id: 'inquiries',
@@ -156,6 +164,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             {mobileSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
           <div className="flex items-center gap-2">
+            <img src="/favicon.svg" alt="DNS Logo" className="w-5 h-5 rounded-xs object-contain" />
             <span className="font-display font-bold text-white text-base tracking-tight">
               Durman Nasar Studio
             </span>

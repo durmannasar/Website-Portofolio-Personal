@@ -191,6 +191,11 @@ export interface SiteSettings {
   indexingStatus?: 'index, follow' | 'noindex, nofollow';
   // Professional Content & Asset Protection System
   contentProtection?: ContentProtectionSettings;
+  // Brand Identity, Favicon & Logos
+  faviconUrl?: string;
+  logoUrl?: string;
+  appleTouchIconUrl?: string;
+  faviconUpdatedAt?: string;
   socials: {
     instagram: string;
     linkedin: string;

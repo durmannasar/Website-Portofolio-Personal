@@ -468,6 +468,66 @@ app.put('/api/settings', requireAuth, (req, res) => {
   return res.json(updated);
 });
 
+// Favicon & Logo Upload Handler (PNG, JPG, SVG)
+app.post('/api/settings/favicon-upload', requireAuth, upload.single('file') as any, (req: any, res: any) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+
+  const ext = path.extname(req.file.originalname).toLowerCase();
+  const fileUrl = `/uploads/${req.file.filename}`;
+
+  // Keep media library in sync
+  try {
+    db.addMedia({
+      filename: req.file.filename,
+      url: fileUrl,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      altText: 'Durman Nasar Studio Favicon & Brand Mark',
+      title: req.file.originalname || 'Favicon Logo',
+    });
+  } catch {}
+
+  // Sync to public and dist root favicon files
+  try {
+    const publicDir = path.resolve(process.cwd(), 'public');
+    const distDir = path.resolve(process.cwd(), 'dist');
+
+    if (ext === '.svg') {
+      fs.copyFileSync(req.file.path, path.join(publicDir, 'favicon.svg'));
+      fs.copyFileSync(req.file.path, path.join(publicDir, 'logo.svg'));
+      if (fs.existsSync(distDir)) {
+        fs.copyFileSync(req.file.path, path.join(distDir, 'favicon.svg'));
+        fs.copyFileSync(req.file.path, path.join(distDir, 'logo.svg'));
+      }
+    } else {
+      fs.copyFileSync(req.file.path, path.join(publicDir, 'favicon-32x32.png'));
+      fs.copyFileSync(req.file.path, path.join(publicDir, 'apple-touch-icon.png'));
+      if (fs.existsSync(distDir)) {
+        fs.copyFileSync(req.file.path, path.join(distDir, 'favicon-32x32.png'));
+        fs.copyFileSync(req.file.path, path.join(distDir, 'apple-touch-icon.png'));
+      }
+    }
+  } catch (copyErr) {
+    console.warn('Note: file sync to public root warning', copyErr);
+  }
+
+  const updatedSettings = db.updateSettings({
+    faviconUrl: fileUrl,
+    logoUrl: fileUrl,
+    appleTouchIconUrl: fileUrl,
+    faviconUpdatedAt: new Date().toISOString(),
+  });
+
+  return res.json({
+    success: true,
+    fileUrl,
+    filename: req.file.filename,
+    settings: updatedSettings,
+  });
+});
+
 // Search Engine Indexation: Robots.txt & Dynamic Sitemap.xml
 app.get('/robots.txt', (_req, res) => {
   const settings = db.getSettings();
