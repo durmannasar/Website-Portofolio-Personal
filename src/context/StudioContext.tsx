@@ -10,7 +10,7 @@ import {
   EditorialInsight,
 } from '../types';
 import { api, getAuthToken, clearAuthToken } from '../services/api';
-import { initGA, trackPageView } from '../utils/analytics';
+import { initGA, initGTM, trackPageView } from '../utils/analytics';
 import {
   initialProjects,
   initialServices,
@@ -192,6 +192,7 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (fresh.sliders?.length) setSliders(fresh.sliders);
         if (fresh.settings) {
           setSettings(fresh.settings);
+          initGTM(fresh.settings.gtmContainerId || 'GTM-MHCKKWJQ');
           if (fresh.settings.customTrackingCode || fresh.settings.gaMeasurementId) {
             initGA(fresh.settings.gaMeasurementId || '', {
               customScript: fresh.settings.customTrackingCode,
@@ -221,6 +222,7 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (insightData?.length) setInsights(insightData);
         if (settData) {
           setSettings(settData);
+          initGTM(settData.gtmContainerId || 'GTM-MHCKKWJQ');
           if (settData.customTrackingCode || settData.gaMeasurementId) {
             initGA(settData.gaMeasurementId || '', {
               customScript: settData.customTrackingCode,
@@ -267,6 +269,7 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           },
           onSettingsUpdate: (updated) => {
             setSettings(updated);
+            initGTM(updated.gtmContainerId || 'GTM-MHCKKWJQ');
             if (updated.customTrackingCode || updated.gaMeasurementId) {
               initGA(updated.gaMeasurementId || '', {
                 customScript: updated.customTrackingCode,

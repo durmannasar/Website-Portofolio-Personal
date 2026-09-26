@@ -51,6 +51,8 @@ export const AdminAnalytics: React.FC = () => {
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const [copiedHead, setCopiedHead] = useState(false);
+  const [copiedBody, setCopiedBody] = useState(false);
   const [events, setEvents] = useState<TelemetryLogEvent[]>([]);
   const [selectedEventFilter, setSelectedEventFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'overview' | 'config' | 'events'>('overview');
@@ -573,6 +575,117 @@ export const AdminAnalytics: React.FC = () => {
                   </span>
                 </div>
               </label>
+            </div>
+          </div>
+
+          {/* ================= INSTAL GOOGLE TAG MANAGER (GTM) ================= */}
+          <div className="p-6 bg-[#0C0E16] border border-white/10 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Sliders className="w-5 h-5 text-[#E2B714]" />
+                  <h3 className="font-display text-lg font-bold text-white">
+                    Instal Google Tag Manager
+                  </h3>
+                </div>
+                <p className="text-xs text-neutral-300 mt-1">
+                  Salin kode di bawah dan tempelkan ke setiap halaman situs web Anda.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[11px] text-emerald-400 bg-emerald-950/70 border border-emerald-800/80 px-2.5 py-1 flex items-center gap-1.5 font-semibold">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Terpasang di Website: {formData.gtmContainerId || 'GTM-MHCKKWJQ'}</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Step 1: Head */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <label className="font-mono text-neutral-200 font-medium">
+                  1. Tempelkan kode ini di posisi setinggi mungkin dalam <code className="text-[#E2B714] font-mono bg-white/5 px-1.5 py-0.5">&lt;head&gt;</code> halaman:
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const snippet = `<!-- Google Tag Manager -->\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\nnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\nj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\n'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\n})(window,document,'script','dataLayer','${formData.gtmContainerId || 'GTM-MHCKKWJQ'}');</script>\n<!-- End Google Tag Manager -->`;
+                    navigator.clipboard.writeText(snippet);
+                    setCopiedHead(true);
+                    showToast('Kode GTM <head> berhasil disalin!');
+                    setTimeout(() => setCopiedHead(false), 2500);
+                  }}
+                  className="px-3 py-1 bg-white/10 hover:bg-[#E2B714] hover:text-black text-white text-xs font-mono uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  {copiedHead ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedHead ? 'Tersalin' : 'Salin'}</span>
+                </button>
+              </div>
+
+              <pre className="p-4 bg-[#080A10] border border-white/15 text-[11px] font-mono text-neutral-300 leading-relaxed overflow-x-auto select-all">
+{`<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','${formData.gtmContainerId || 'GTM-MHCKKWJQ'}');</script>
+<!-- End Google Tag Manager -->`}
+              </pre>
+            </div>
+
+            {/* Step 2: Body noscript */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <label className="font-mono text-neutral-200 font-medium">
+                  2. Tempelkan kode ini tepat setelah tag <code className="text-[#E2B714] font-mono bg-white/5 px-1.5 py-0.5">&lt;body&gt;</code> pembuka:
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const snippet = `<!-- Google Tag Manager (noscript) -->\n<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=${formData.gtmContainerId || 'GTM-MHCKKWJQ'}"\nheight="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>\n<!-- End Google Tag Manager (noscript) -->`;
+                    navigator.clipboard.writeText(snippet);
+                    setCopiedBody(true);
+                    showToast('Kode GTM <body> (noscript) berhasil disalin!');
+                    setTimeout(() => setCopiedBody(false), 2500);
+                  }}
+                  className="px-3 py-1 bg-white/10 hover:bg-[#E2B714] hover:text-black text-white text-xs font-mono uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  {copiedBody ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedBody ? 'Tersalin' : 'Salin'}</span>
+                </button>
+              </div>
+
+              <pre className="p-4 bg-[#080A10] border border-white/15 text-[11px] font-mono text-neutral-300 leading-relaxed overflow-x-auto select-all">
+{`<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=${formData.gtmContainerId || 'GTM-MHCKKWJQ'}"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->`}
+              </pre>
+            </div>
+
+            {/* Container ID Input & Auto Sync */}
+            <div className="p-4 bg-white/[0.02] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="space-y-0.5">
+                <span className="font-mono text-neutral-300 font-bold block">GTM Container ID Terhubung:</span>
+                <span className="text-[11px] text-neutral-500 font-mono">Kode snippet otomatis diperbarui sesuai ID Container ini.</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="GTM-MHCKKWJQ"
+                  value={formData.gtmContainerId || ''}
+                  onChange={(e) => setFormData({ ...formData, gtmContainerId: e.target.value.trim() })}
+                  className="bg-black border border-white/20 px-3 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-[#E2B714] w-44"
+                />
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, gtmContainerId: 'GTM-MHCKKWJQ' })}
+                  className="px-2.5 py-1.5 bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white text-[11px] font-mono transition-colors cursor-pointer"
+                >
+                  GTM-MHCKKWJQ
+                </button>
+              </div>
             </div>
           </div>
 
