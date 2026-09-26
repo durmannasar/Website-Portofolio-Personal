@@ -52,44 +52,46 @@ export function clearTelemetryHistory() {
 }
 
 function getDefaultTelemetryEvents(): TelemetryLogEvent[] {
-  const now = Date.now();
-  return [
-    {
-      id: 'evt-init-1',
-      name: 'page_view',
-      timestamp: new Date(now - 120000).toISOString(),
-      params: { page_path: '/', page_title: 'Durman Nasar Studio – Creative Studio & Agency' },
-      status: 'dispatched',
-    },
-    {
-      id: 'evt-init-2',
-      name: 'project_view',
-      timestamp: new Date(now - 85000).toISOString(),
-      params: { project_slug: 'synapse-3d-spatial-exhibition', category: '3D Exhibition Booth', client: 'Synapse Tech' },
-      status: 'dispatched',
-    },
-    {
-      id: 'evt-init-3',
-      name: 'lightbox_open',
-      timestamp: new Date(now - 45000).toISOString(),
-      params: { project: 'AURA Luxury Monogram', image_count: 5 },
-      status: 'dispatched',
-    },
-    {
-      id: 'evt-init-4',
-      name: 'service_view',
-      timestamp: new Date(now - 20000).toISOString(),
-      params: { service_name: '3D Exhibition Booth', source: 'Services Grid' },
-      status: 'dispatched',
-    },
-  ];
+  return [];
 }
 
 export function initGA(
   measurementId: string,
-  options: { anonymizeIp?: boolean; enhancedMeasurement?: boolean } = {}
+  options: { anonymizeIp?: boolean; enhancedMeasurement?: boolean; customScript?: string } = {}
 ) {
-  if (!measurementId || typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return;
+
+  // If custom script from Google Analytics "Install manually" is provided
+  if (options.customScript && options.customScript.trim()) {
+    if (!document.getElementById('ga-custom-script')) {
+      try {
+        const container = document.createElement('div');
+        container.id = 'ga-custom-script';
+        container.style.display = 'none';
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(options.customScript, 'text/html');
+        const scripts = doc.querySelectorAll('script');
+
+        scripts.forEach((oldScript) => {
+          const newScript = document.createElement('script');
+          Array.from(oldScript.attributes).forEach((attr) => {
+            newScript.setAttribute(attr.name, attr.value);
+          });
+          newScript.textContent = oldScript.textContent;
+          document.head.appendChild(newScript);
+        });
+        document.body.appendChild(container);
+        return;
+      } catch (e) {
+        console.warn('Failed to inject custom Google tag script:', e);
+      }
+    }
+    return;
+  }
+
+  // Standard injection via measurementId if valid
+  if (!measurementId || measurementId === 'G-DURMANNASAR' || !measurementId.startsWith('G-')) return;
 
   if (document.getElementById('ga-script')) {
     // If script already exists, update config

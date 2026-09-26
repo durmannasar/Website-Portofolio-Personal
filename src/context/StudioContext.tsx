@@ -192,8 +192,12 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (fresh.sliders?.length) setSliders(fresh.sliders);
         if (fresh.settings) {
           setSettings(fresh.settings);
-          if (fresh.settings.gaMeasurementId) {
-            initGA(fresh.settings.gaMeasurementId);
+          if (fresh.settings.customTrackingCode || fresh.settings.gaMeasurementId) {
+            initGA(fresh.settings.gaMeasurementId || '', {
+              customScript: fresh.settings.customTrackingCode,
+              anonymizeIp: fresh.settings.anonymizeIp,
+              enhancedMeasurement: fresh.settings.enhancedMeasurement,
+            });
           }
         }
         setIsFirebaseLive(true);
@@ -217,8 +221,12 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (insightData?.length) setInsights(insightData);
         if (settData) {
           setSettings(settData);
-          if (settData.gaMeasurementId) {
-            initGA(settData.gaMeasurementId);
+          if (settData.customTrackingCode || settData.gaMeasurementId) {
+            initGA(settData.gaMeasurementId || '', {
+              customScript: settData.customTrackingCode,
+              anonymizeIp: settData.anonymizeIp,
+              enhancedMeasurement: settData.enhancedMeasurement,
+            });
           }
         }
         if (mediaData) setMedia(mediaData);
@@ -259,8 +267,12 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           },
           onSettingsUpdate: (updated) => {
             setSettings(updated);
-            if (updated.gaMeasurementId) {
-              initGA(updated.gaMeasurementId);
+            if (updated.customTrackingCode || updated.gaMeasurementId) {
+              initGA(updated.gaMeasurementId || '', {
+                customScript: updated.customTrackingCode,
+                anonymizeIp: updated.anonymizeIp,
+                enhancedMeasurement: updated.enhancedMeasurement,
+              });
             }
           },
         });

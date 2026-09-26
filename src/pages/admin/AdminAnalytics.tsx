@@ -20,10 +20,14 @@ import {
   TrendingUp,
   Sliders,
   CheckCircle2,
+  ClipboardPaste,
+  Code2,
+  Sparkles,
+  Info,
 } from 'lucide-react';
 import { useStudio } from '../../context/StudioContext';
 import { api } from '../../services/api';
-import { SiteSettings } from '../../types';
+import { SiteSettings, ContactInquiry } from '../../types';
 import {
   getTelemetryHistory,
   clearTelemetryHistory,
@@ -34,8 +38,10 @@ import {
 
 export const AdminAnalytics: React.FC = () => {
   const { settings, refreshData, showToast } = useStudio();
+  const [inquiries, setInquiries] = useState<ContactInquiry[]>([]);
   const [formData, setFormData] = useState<Partial<SiteSettings>>({
-    gaMeasurementId: settings.gaMeasurementId || 'G-DURMANNASAR',
+    gaMeasurementId: settings.gaMeasurementId || '',
+    customTrackingCode: settings.customTrackingCode || '',
     gtmContainerId: settings.gtmContainerId || '',
     metaPixelId: settings.metaPixelId || '',
     linkedInPartnerId: settings.linkedInPartnerId || '',
@@ -45,14 +51,31 @@ export const AdminAnalytics: React.FC = () => {
   });
 
   const [isSaving, setIsSaving] = useState(false);
-  const [copiedSnippet, setCopiedSnippet] = useState(false);
   const [events, setEvents] = useState<TelemetryLogEvent[]>([]);
   const [selectedEventFilter, setSelectedEventFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'overview' | 'config' | 'events'>('overview');
 
-  // Load telemetry events
+  // Keep form in sync when settings change
+  useEffect(() => {
+    setFormData({
+      gaMeasurementId: settings.gaMeasurementId || '',
+      customTrackingCode: settings.customTrackingCode || '',
+      gtmContainerId: settings.gtmContainerId || '',
+      metaPixelId: settings.metaPixelId || '',
+      linkedInPartnerId: settings.linkedInPartnerId || '',
+      telemetryActive: settings.telemetryActive ?? true,
+      anonymizeIp: settings.anonymizeIp ?? true,
+      enhancedMeasurement: settings.enhancedMeasurement ?? true,
+    });
+  }, [settings]);
+
+  // Load telemetry events and real client inquiries
   useEffect(() => {
     setEvents(getTelemetryHistory());
+    api
+      .getInquiries()
+      .then((data) => setInquiries(data || []))
+      .catch(() => {});
 
     const handleUpdate = () => {
       setEvents(getTelemetryHistory());
@@ -64,21 +87,52 @@ export const AdminAnalytics: React.FC = () => {
     };
   }, []);
 
+  const handleScriptChange = (code: string) => {
+    // Detect Measurement ID from pasted script (e.g. id=G-XXXXX or gtag('config', 'G-XXXXX'))
+    const match =
+      code.match(/id=([A-Za-z0-9_-]+)/) ||
+      code.match(/gtag\(['"]config['"],\s*['"]([^'"]+)['"]/);
+    const detectedId = match ? match[1] : '';
+
+    setFormData((prev) => ({
+      ...prev,
+      customTrackingCode: code,
+      gaMeasurementId: detectedId || prev.gaMeasurementId,
+    }));
+  };
+
+  const handlePasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        handleScriptChange(text);
+        showToast('Script Google tag berhasil ditempel dari clipboard');
+      }
+    } catch {
+      showToast('Gunakan tombol Ctrl+V atau Cmd+V di kolom teks untuk menempel script', 'info');
+    }
+  };
+
+  const detectedIdInScript =
+    formData.customTrackingCode?.match(/id=([A-Za-z0-9_-]+)/)?.[1] ||
+    formData.customTrackingCode?.match(/gtag\(['"]config['"],\s*['"]([^'"]+)['"]/)?.[1];
+
   const handleSaveSettings = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsSaving(true);
     try {
       await api.updateSettings(formData);
-      if (formData.gaMeasurementId && formData.telemetryActive) {
-        initGA(formData.gaMeasurementId, {
+      if (formData.telemetryActive && (formData.customTrackingCode || formData.gaMeasurementId)) {
+        initGA(formData.gaMeasurementId || '', {
+          customScript: formData.customTrackingCode,
           anonymizeIp: formData.anonymizeIp,
           enhancedMeasurement: formData.enhancedMeasurement,
         });
       }
       await refreshData();
-      showToast('Telemetry & gtag.js tracking settings updated successfully');
+      showToast('Konfigurasi Google tag (gtag.js) berhasil disimpan dan aktif');
     } catch (err: any) {
-      showToast(err.message || 'Failed to update tracking settings', 'error');
+      showToast(err.message || 'Gagal menyimpan konfigurasi tracking', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -97,27 +151,6 @@ export const AdminAnalytics: React.FC = () => {
     clearTelemetryHistory();
     setEvents([]);
     showToast('Telemetry event log cleared', 'info');
-  };
-
-  const generatedScriptSnippet = `<!-- Global Site Tag (gtag.js) - Google Analytics 4 -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=${
-    formData.gaMeasurementId || 'G-XXXXXXXXXX'
-  }"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', '${formData.gaMeasurementId || 'G-XXXXXXXXXX'}', {
-    'anonymize_ip': ${formData.anonymizeIp ? 'true' : 'false'},
-    'send_page_view': true
-  });
-</script>`;
-
-  const handleCopySnippet = () => {
-    navigator.clipboard.writeText(generatedScriptSnippet);
-    setCopiedSnippet(true);
-    showToast('gtag.js code snippet copied to clipboard');
-    setTimeout(() => setCopiedSnippet(false), 2500);
   };
 
   // Filtered events
@@ -206,206 +239,213 @@ export const AdminAnalytics: React.FC = () => {
       </div>
 
       {/* TAB 1: OVERVIEW & AUDIENCE METRICS */}
-      {activeTab === 'overview' && (
-        <div className="space-y-8">
-          {/* Real-time KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-5 bg-[#0C0E16] border border-white/10 space-y-2">
-              <div className="flex items-center justify-between text-neutral-500">
-                <span className="text-xs font-mono uppercase text-neutral-400">
-                  Active Visitors Now
-                </span>
-                <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-              </div>
-              <div className="font-display text-3xl font-extrabold text-white tabular-nums">
-                14
-              </div>
-              <span className="text-[11px] font-mono text-emerald-400 block">
-                +4 from last hour (Jakarta, SG, Paris)
-              </span>
-            </div>
+      {activeTab === 'overview' && (() => {
+        const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const isTablet = typeof navigator !== 'undefined' && /iPad|Tablet/i.test(navigator.userAgent);
+        const currentDevice = isTablet ? 'Tablet' : isMobile ? 'Mobile' : 'Desktop';
 
-            <div className="p-5 bg-[#0C0E16] border border-white/10 space-y-2">
-              <div className="flex items-center justify-between text-neutral-500">
-                <span className="text-xs font-mono uppercase text-neutral-400">
-                  24h Telemetry Hits
-                </span>
-                <BarChart3 className="w-4 h-4 text-[#E2B714]" />
-              </div>
-              <div className="font-display text-3xl font-extrabold text-white tabular-nums">
-                1,842
-              </div>
-              <span className="text-[11px] font-mono text-neutral-400 block">
-                Tracked via gtag.js Dispatcher
-              </span>
-            </div>
+        const disciplineMap: Record<string, number> = {};
+        inquiries.forEach((inq) => {
+          const key = inq.service || 'General Inquiries';
+          disciplineMap[key] = (disciplineMap[key] || 0) + 1;
+        });
+        const realDisciplines = Object.entries(disciplineMap).map(([name, count]) => ({
+          name,
+          inquiries: count,
+        }));
 
-            <div className="p-5 bg-[#0C0E16] border border-white/10 space-y-2">
-              <div className="flex items-center justify-between text-neutral-500">
-                <span className="text-xs font-mono uppercase text-neutral-400">
-                  Avg. Portfolio Time
-                </span>
-                <Clock className="w-4 h-4 text-[#E2B714]" />
-              </div>
-              <div className="font-display text-3xl font-extrabold text-white tabular-nums">
-                3m 48s
-              </div>
-              <span className="text-[11px] font-mono text-neutral-400 block">
-                High visual dwell on 3D & Motion
-              </span>
-            </div>
-
-            <div className="p-5 bg-[#0C0E16] border border-white/10 space-y-2">
-              <div className="flex items-center justify-between text-neutral-500">
-                <span className="text-xs font-mono uppercase text-neutral-400">
-                  Brief Inquiry Rate
-                </span>
-                <TrendingUp className="w-4 h-4 text-emerald-400" />
-              </div>
-              <div className="font-display text-3xl font-extrabold text-emerald-400 tabular-nums">
-                4.6%
-              </div>
-              <span className="text-[11px] font-mono text-neutral-400 block">
-                Leads converted to direct briefs
-              </span>
-            </div>
-          </div>
-
-          {/* Traffic Breakdown Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Geo Presence */}
-            <div className="p-6 bg-[#0C0E16] border border-white/10 space-y-4">
-              <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                <span className="text-xs font-mono uppercase text-neutral-300 font-bold flex items-center gap-1.5">
-                  <Globe className="w-4 h-4 text-[#E2B714]" />
-                  <span>Audience Geographic Reach</span>
-                </span>
-                <span className="text-[10px] font-mono text-neutral-500">Last 30 Days</span>
-              </div>
-              <div className="space-y-3 text-xs">
-                {[
-                  { country: 'Indonesia', share: '46%', city: 'Jakarta, Surabaya, Bali', count: '848' },
-                  { country: 'Singapore', share: '22%', city: 'Downtown Core, Marina Bay', count: '405' },
-                  { country: 'France', share: '12%', city: 'Paris, Lyon', count: '221' },
-                  { country: 'United States', share: '10%', city: 'New York, San Francisco', count: '184' },
-                  { country: 'United Arab Emirates', share: '6%', city: 'Dubai, Abu Dhabi', count: '110' },
-                  { country: 'Other International', share: '4%', city: 'Tokyo, London, Sydney', count: '74' },
-                ].map((item, idx) => (
-                  <div key={idx} className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-white">{item.country}</span>
-                      <span className="font-mono text-[#E2B714]">{item.share} ({item.count})</span>
-                    </div>
-                    <div className="w-full bg-white/5 h-1.5">
-                      <div
-                        className="bg-[#E2B714] h-1.5"
-                        style={{ width: item.share }}
-                      />
-                    </div>
-                    <span className="text-[10px] text-neutral-500 block">{item.city}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Devices & Channels */}
-            <div className="p-6 bg-[#0C0E16] border border-white/10 space-y-4">
-              <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                <span className="text-xs font-mono uppercase text-neutral-300 font-bold flex items-center gap-1.5">
-                  <Laptop className="w-4 h-4 text-[#E2B714]" />
-                  <span>Platform & Channels</span>
-                </span>
-                <span className="text-[10px] font-mono text-neutral-500">Hardware & Sources</span>
-              </div>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <span className="text-[11px] font-mono uppercase text-neutral-400 block">
-                    Device Breakdown
+        return (
+          <div className="space-y-8">
+            {/* Real-time KPI Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-5 bg-[#0C0E16] border border-white/10 space-y-2">
+                <div className="flex items-center justify-between text-neutral-500">
+                  <span className="text-xs font-mono uppercase text-neutral-400">
+                    Active Visitors Now
                   </span>
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="p-3 bg-white/5 border border-white/10 space-y-1">
-                      <Laptop className="w-4 h-4 mx-auto text-neutral-300" />
-                      <span className="font-bold text-white block">64%</span>
-                      <span className="text-[10px] text-neutral-400 font-mono">Desktop</span>
-                    </div>
-                    <div className="p-3 bg-white/5 border border-white/10 space-y-1">
-                      <Smartphone className="w-4 h-4 mx-auto text-neutral-300" />
-                      <span className="font-bold text-white block">32%</span>
-                      <span className="text-[10px] text-neutral-400 font-mono">Mobile</span>
-                    </div>
-                    <div className="p-3 bg-white/5 border border-white/10 space-y-1">
-                      <Layers className="w-4 h-4 mx-auto text-neutral-300" />
-                      <span className="font-bold text-white block">4%</span>
-                      <span className="text-[10px] text-neutral-400 font-mono">Tablet</span>
-                    </div>
-                  </div>
+                  <span className="flex h-2 w-2 relative">
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-neutral-600"></span>
+                  </span>
+                </div>
+                <div className="font-display text-3xl font-extrabold text-white tabular-nums">
+                  0
+                </div>
+                <span className="text-[11px] font-mono text-neutral-500 block">
+                  Belum terhubung ke GA4 Realtime
+                </span>
+              </div>
+
+              <div className="p-5 bg-[#0C0E16] border border-white/10 space-y-2">
+                <div className="flex items-center justify-between text-neutral-500">
+                  <span className="text-xs font-mono uppercase text-neutral-400">
+                    Telemetry Hits
+                  </span>
+                  <BarChart3 className="w-4 h-4 text-[#E2B714]" />
+                </div>
+                <div className="font-display text-3xl font-extrabold text-white tabular-nums">
+                  {events.length}
+                </div>
+                <span className="text-[11px] font-mono text-neutral-400 block">
+                  {events.length > 0 ? 'Tercatat di sesi browser lokal' : '0 hit (Menunggu pengunjung)'}
+                </span>
+              </div>
+
+              <div className="p-5 bg-[#0C0E16] border border-white/10 space-y-2">
+                <div className="flex items-center justify-between text-neutral-500">
+                  <span className="text-xs font-mono uppercase text-neutral-400">
+                    Avg. Portfolio Time
+                  </span>
+                  <Clock className="w-4 h-4 text-[#E2B714]" />
+                </div>
+                <div className="font-display text-3xl font-extrabold text-neutral-400 tabular-nums">
+                  0s
+                </div>
+                <span className="text-[11px] font-mono text-neutral-500 block">
+                  Memerlukan data aktif GA4
+                </span>
+              </div>
+
+              <div className="p-5 bg-[#0C0E16] border border-white/10 space-y-2">
+                <div className="flex items-center justify-between text-neutral-500">
+                  <span className="text-xs font-mono uppercase text-neutral-400">
+                    Total Client Inquiries
+                  </span>
+                  <TrendingUp className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div className="font-display text-3xl font-extrabold text-emerald-400 tabular-nums">
+                  {inquiries.length}
+                </div>
+                <span className="text-[11px] font-mono text-neutral-400 block">
+                  {inquiries.length > 0 ? `${inquiries.length} pesan brief riil masuk` : 'Belum ada pesan masuk'}
+                </span>
+              </div>
+            </div>
+
+            {/* Traffic Breakdown Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Geo Presence */}
+              <div className="p-6 bg-[#0C0E16] border border-white/10 space-y-4">
+                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                  <span className="text-xs font-mono uppercase text-neutral-300 font-bold flex items-center gap-1.5">
+                    <Globe className="w-4 h-4 text-[#E2B714]" />
+                    <span>Audience Geographic Reach</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-neutral-500">Google Analytics 4</span>
                 </div>
 
-                <div className="space-y-2 pt-2 border-t border-white/5">
-                  <span className="text-[11px] font-mono uppercase text-neutral-400 block">
-                    Top Traffic Channels
-                  </span>
-                  <div className="space-y-2 text-xs">
-                    <div className="flex items-center justify-between p-2 bg-white/[0.02]">
-                      <span className="text-neutral-300">Direct / Portfolio Deck Links</span>
-                      <span className="font-mono text-[#E2B714]">42%</span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 bg-white/[0.02]">
-                      <span className="text-neutral-300">Google Organic Search</span>
-                      <span className="font-mono text-[#E2B714]">28%</span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 bg-white/[0.02]">
-                      <span className="text-neutral-300">LinkedIn Creative Leadership</span>
-                      <span className="font-mono text-[#E2B714]">18%</span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 bg-white/[0.02]">
-                      <span className="text-neutral-300">Behance & Instagram</span>
-                      <span className="font-mono text-[#E2B714]">12%</span>
-                    </div>
+                <div className="py-8 px-4 text-center space-y-3 bg-white/[0.01] border border-white/5">
+                  <Globe className="w-8 h-8 text-neutral-600 mx-auto" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-white">Belum Ada Data Geografis</p>
+                    <p className="text-[11px] text-neutral-400 leading-relaxed max-w-xs mx-auto">
+                      Data jangkauan negara dan kota pengunjung akan terhimpun otomatis setelah Google Analytics 4 (GA4) terhubung dan menerima kunjungan riil.
+                    </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('config')}
+                    className="text-[11px] font-mono text-[#E2B714] hover:underline cursor-pointer inline-flex items-center gap-1"
+                  >
+                    <span>Atur ID Pengukuran GA4</span>
+                    <span>→</span>
+                  </button>
                 </div>
               </div>
-            </div>
 
-            {/* Most Visited Disciplines & Works */}
-            <div className="p-6 bg-[#0C0E16] border border-white/10 space-y-4">
-              <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                <span className="text-xs font-mono uppercase text-neutral-300 font-bold flex items-center gap-1.5">
-                  <Flame className="w-4 h-4 text-[#E2B714]" />
-                  <span>High-Interest Content</span>
-                </span>
-                <span className="text-[10px] font-mono text-neutral-500">Engagements</span>
-              </div>
+              {/* Devices & Channels */}
+              <div className="p-6 bg-[#0C0E16] border border-white/10 space-y-4">
+                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                  <span className="text-xs font-mono uppercase text-neutral-300 font-bold flex items-center gap-1.5">
+                    <Laptop className="w-4 h-4 text-[#E2B714]" />
+                    <span>Platform & Channels</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-neutral-500">Perangkat Saat Ini</span>
+                </div>
 
-              <div className="space-y-3 text-xs">
-                <span className="text-[11px] font-mono uppercase text-neutral-400 block">
-                  Top Requested Disciplines
-                </span>
-                {[
-                  { name: '3D Exhibition Booth', inquiries: 28, tag: '08. Spatial' },
-                  { name: 'Graphic Design & Identity', inquiries: 24, tag: '01. Branding' },
-                  { name: 'Motion Graphics', inquiries: 19, tag: '02. Kinetic' },
-                  { name: 'Video Editing & Film', inquiries: 16, tag: '05. Cinema' },
-                ].map((s, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 bg-white/[0.02] border border-white/5">
-                    <div>
-                      <span className="text-white font-medium block">{s.name}</span>
-                      <span className="text-[10px] text-neutral-500 font-mono">{s.tag}</span>
-                    </div>
-                    <span className="font-mono text-[#E2B714] text-xs font-bold">
-                      {s.inquiries} briefs
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-mono uppercase text-neutral-400 block">
+                      Device Breakdown (Sesi Riil)
                     </span>
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                      <div className={`p-3 border space-y-1 ${currentDevice === 'Desktop' ? 'bg-[#E2B714]/10 border-[#E2B714]/40 text-[#E2B714]' : 'bg-white/5 border-white/10 text-neutral-400'}`}>
+                        <Laptop className="w-4 h-4 mx-auto" />
+                        <span className="font-bold text-white block">{currentDevice === 'Desktop' ? '1 Sesi' : '0'}</span>
+                        <span className="text-[10px] font-mono">Desktop</span>
+                      </div>
+                      <div className={`p-3 border space-y-1 ${currentDevice === 'Mobile' ? 'bg-[#E2B714]/10 border-[#E2B714]/40 text-[#E2B714]' : 'bg-white/5 border-white/10 text-neutral-400'}`}>
+                        <Smartphone className="w-4 h-4 mx-auto" />
+                        <span className="font-bold text-white block">{currentDevice === 'Mobile' ? '1 Sesi' : '0'}</span>
+                        <span className="text-[10px] font-mono">Mobile</span>
+                      </div>
+                      <div className={`p-3 border space-y-1 ${currentDevice === 'Tablet' ? 'bg-[#E2B714]/10 border-[#E2B714]/40 text-[#E2B714]' : 'bg-white/5 border-white/10 text-neutral-400'}`}>
+                        <Layers className="w-4 h-4 mx-auto" />
+                        <span className="font-bold text-white block">{currentDevice === 'Tablet' ? '1 Sesi' : '0'}</span>
+                        <span className="text-[10px] font-mono">Tablet</span>
+                      </div>
+                    </div>
                   </div>
-                ))}
+
+                  <div className="space-y-2 pt-2 border-t border-white/5">
+                    <span className="text-[11px] font-mono uppercase text-neutral-400 block">
+                      Traffic Acquisition
+                    </span>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center justify-between p-2 bg-white/[0.02]">
+                        <span className="text-neutral-300">Direct / Tautan Langsung</span>
+                        <span className="font-mono text-[#E2B714]">1 Sesi Aktif</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-white/[0.02]">
+                        <span className="text-neutral-400">Google Search Organic</span>
+                        <span className="font-mono text-neutral-500">0 (Menunggu GA4)</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-white/[0.02]">
+                        <span className="text-neutral-400">Social Media & Referral</span>
+                        <span className="font-mono text-neutral-500">0 (Menunggu GA4)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Most Visited Disciplines & Works */}
+              <div className="p-6 bg-[#0C0E16] border border-white/10 space-y-4">
+                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                  <span className="text-xs font-mono uppercase text-neutral-300 font-bold flex items-center gap-1.5">
+                    <Flame className="w-4 h-4 text-[#E2B714]" />
+                    <span>High-Interest Content</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-neutral-500">Permintaan Brief Riil</span>
+                </div>
+
+                {realDisciplines.length > 0 ? (
+                  <div className="space-y-2.5 text-xs">
+                    <span className="text-[11px] font-mono uppercase text-neutral-400 block">
+                      Disiplin yang Dipesan Klien
+                    </span>
+                    {realDisciplines.map((d, i) => (
+                      <div key={i} className="flex items-center justify-between p-2.5 bg-white/[0.02] border border-white/5">
+                        <span className="text-white font-medium">{d.name}</span>
+                        <span className="font-mono text-[#E2B714] text-xs font-bold">
+                          {d.inquiries} brief
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-8 px-4 text-center space-y-2 bg-white/[0.01] border border-white/5">
+                    <Flame className="w-8 h-8 text-neutral-600 mx-auto" />
+                    <p className="text-xs font-semibold text-white">Belum Ada Permintaan Brief</p>
+                    <p className="text-[11px] text-neutral-400 leading-relaxed">
+                      Statistik minat layanan akan otomatis terhitung saat klien mengirimkan form inquiry melalui website.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* TAB 2: CONFIGURATION & SCRIPT GENERATOR */}
       {activeTab === 'config' && (
@@ -536,31 +576,116 @@ export const AdminAnalytics: React.FC = () => {
             </div>
           </div>
 
-          {/* Code Snippet Box */}
-          <div className="p-6 bg-[#0C0E16] border border-white/10 space-y-4">
-            <div className="flex items-center justify-between">
+          {/* Install Manual: Google tag (gtag.js) */}
+          <div className="p-6 bg-[#0C0E16] border border-white/10 space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 className="font-display text-base font-bold text-white">
-                  HTML Tracking Code Snippet
-                </h3>
-                <p className="text-xs text-neutral-400">
-                  Global Site Tag (gtag.js) script configured with your active studio settings.
+                <div className="flex items-center gap-2">
+                  <Code2 className="w-5 h-5 text-[#E2B714]" />
+                  <h3 className="font-display text-base font-bold text-white">
+                    Install Manual: Script Google tag (gtag.js)
+                  </h3>
+                </div>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Salin script resmi langsung dari konsol Google Analytics Anda dan tempelkan (paste) di bawah ini.
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={handleCopySnippet}
-                className="px-3.5 py-1.5 bg-white/10 hover:bg-[#E2B714] hover:text-black text-white text-xs font-mono uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                {copiedSnippet ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedSnippet ? 'Copied' : 'Copy Snippet'}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePasteFromClipboard}
+                  className="px-3 py-1.5 bg-white/10 hover:bg-[#E2B714] hover:text-black text-white text-xs font-mono uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <ClipboardPaste className="w-3.5 h-3.5" />
+                  <span>Tempel dari Clipboard</span>
+                </button>
+                {formData.customTrackingCode && (
+                  <button
+                    type="button"
+                    onClick={() => handleScriptChange('')}
+                    className="px-3 py-1.5 bg-white/5 hover:bg-red-500/20 text-neutral-400 hover:text-red-300 text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer"
+                  >
+                    Hapus
+                  </button>
+                )}
+              </div>
             </div>
 
-            <pre className="p-4 bg-black/80 border border-white/10 text-[11px] font-mono text-[#E2B714] overflow-x-auto leading-relaxed">
-              {generatedScriptSnippet}
-            </pre>
+            {/* Step-by-Step Guide from Google Analytics */}
+            <div className="p-4 bg-white/[0.02] border border-white/10 space-y-2 text-xs">
+              <div className="flex items-center gap-2 text-[#E2B714] font-semibold font-mono">
+                <Info className="w-4 h-4" />
+                <span>Petunjuk Cara Mengambil Script dari Google Analytics (Install Manually):</span>
+              </div>
+              <ol className="list-decimal pl-5 space-y-1.5 text-neutral-300 text-[11px] leading-relaxed">
+                <li>
+                  Buka akun <strong>Google Analytics</strong> Anda di{' '}
+                  <a
+                    href="https://analytics.google.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#E2B714] hover:underline inline-flex items-center gap-0.5"
+                  >
+                    <span>analytics.google.com</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>.
+                </li>
+                <li>
+                  Masuk ke menu <strong>Admin</strong> (ikon roda gigi di pojok kiri bawah) → klik <strong>Aliran data (Data Streams)</strong>.
+                </li>
+                <li>
+                  Pilih Aliran Web website Anda (misal: <code>durmannasarstudio.com</code>).
+                </li>
+                <li>
+                  Gulir ke bagian paling bawah jendela detail aliran web, lalu klik <strong>Lihat petunjuk tag (View tag instructions)</strong>.
+                </li>
+                <li>
+                  Pilih tab <strong>Pasang secara manual (Install manually)</strong>.
+                </li>
+                <li>
+                  Klik tombol <strong>Salin (Copy)</strong> pada script <code>&lt;!-- Google tag (gtag.js) --&gt;</code>, lalu <strong>tempelkan (paste)</strong> ke dalam kotak di bawah ini.
+                </li>
+              </ol>
+            </div>
+
+            {/* Textarea for Pasting the Script */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <label className="font-mono text-neutral-300 uppercase flex items-center gap-1.5">
+                  <span>Script Google Tag (gtag.js) dari Google Analytics</span>
+                  <span className="text-[#E2B714] font-bold">* Tempel di Sini</span>
+                </label>
+                {detectedIdInScript && (
+                  <span className="font-mono text-[11px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                    <span>Terdeteksi ID: {detectedIdInScript}</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="relative">
+                <textarea
+                  rows={8}
+                  value={formData.customTrackingCode || ''}
+                  onChange={(e) => handleScriptChange(e.target.value)}
+                  placeholder={`<!-- Tempelkan script Google tag (gtag.js) yang Anda salin dari Google Analytics di sini -->\n\n<!-- Contoh format resmi dari Google Analytics: -->\n<!-- Google tag (gtag.js) -->\n<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>\n<script>\n  window.dataLayer = window.dataLayer || [];\n  function gtag(){dataLayer.push(arguments);}\n  gtag('js', new Date());\n\n  gtag('config', 'G-XXXXXXXXXX');\n</script>`}
+                  className="w-full bg-[#080A10] border border-white/15 p-4 text-xs font-mono text-[#E2B714] placeholder-neutral-600 focus:outline-none focus:border-[#E2B714] leading-relaxed resize-y"
+                  spellCheck={false}
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] font-mono text-neutral-500">
+                <span>
+                  {formData.customTrackingCode
+                    ? `✓ ${formData.customTrackingCode.length} karakter script tersimpan`
+                    : 'Menunggu script dari konsol Google Analytics'}
+                </span>
+                <span className="text-neutral-400">
+                  Script ini akan diinjeksikan secara otomatis ke seluruh halaman website saat disimpan.
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-end">

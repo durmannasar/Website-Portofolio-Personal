@@ -171,6 +171,7 @@ export interface SiteSettings {
   completedProjects: number;
   gaMeasurementId: string;
   searchConsoleVerification: string;
+  customTrackingCode?: string; // Pasted script from Google Analytics (Install manually)
   // Telemetry & Audience Analytics
   gtmContainerId?: string;
   metaPixelId?: string;
