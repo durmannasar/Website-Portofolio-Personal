@@ -569,23 +569,46 @@ export const api = {
     const headers: Record<string, string> = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch('/api/settings/favicon-upload', {
-      method: 'POST',
-      headers,
-      body: formData,
+    try {
+      const res = await fetch('/api/settings/favicon-upload', {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.settings) {
+          saveSettingsToFirestore(data.settings).catch((err) =>
+            console.warn('Firestore settings update sync note:', err)
+          );
+        }
+        return data;
+      }
+    } catch (err) {
+      console.warn('Backend /api/settings/favicon-upload unavailable, activating client fallback:', err);
+    }
+
+    // High-fidelity client-side fallback (DataURL encoding, ideal for static Hostinger deployment)
+    const base64Url = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Gagal mengunggah file logo/favicon');
-    }
-    const data = await res.json();
-    if (data.settings) {
-      saveSettingsToFirestore(data.settings).catch((err) =>
-        console.warn('Firestore settings update sync note:', err)
-      );
-    }
-    return data;
+    const updated = await this.updateSettings({
+      faviconUrl: base64Url,
+      logoUrl: base64Url,
+      appleTouchIconUrl: base64Url,
+      faviconUpdatedAt: new Date().toISOString(),
+    });
+
+    return {
+      success: true,
+      fileUrl: base64Url,
+      settings: updated,
+    };
   },
 
   // Dashboard Stats

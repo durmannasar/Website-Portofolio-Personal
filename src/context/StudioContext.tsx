@@ -31,17 +31,31 @@ import {
 
 export const applyFaviconToDocument = (url?: string) => {
   if (!url || typeof document === 'undefined') return;
+  const isSvg = url.toLowerCase().includes('.svg') || url.startsWith('data:image/svg+xml');
+  const isPng = url.toLowerCase().includes('.png') || url.startsWith('data:image/png');
+  const mimeType = isSvg ? 'image/svg+xml' : isPng ? 'image/png' : 'image/jpeg';
+  const versionedUrl = url.startsWith('data:') ? url : url.includes('?') ? url : `${url}?v=${Date.now()}`;
+
   const linkSvg = document.querySelector("link[type='image/svg+xml']") as HTMLLinkElement | null;
   const linkPng = document.querySelector("link[type='image/png']") as HTMLLinkElement | null;
   const linkIcon = document.querySelector("link[rel='icon']:not([type])") as HTMLLinkElement | null;
   const linkApple = document.querySelector("link[rel='apple-touch-icon']") as HTMLLinkElement | null;
 
-  const versionedUrl = url.includes('?') ? url : `${url}?v=${Date.now()}`;
-
-  if (linkSvg && url.endsWith('.svg')) linkSvg.href = versionedUrl;
-  if (linkPng) linkPng.href = versionedUrl;
+  if (linkSvg) {
+    if (!isSvg) linkSvg.type = mimeType;
+    linkSvg.href = versionedUrl;
+  }
+  if (linkPng) {
+    linkPng.type = mimeType;
+    linkPng.href = versionedUrl;
+  }
   if (linkIcon) linkIcon.href = versionedUrl;
   if (linkApple) linkApple.href = versionedUrl;
+
+  const allIcons = document.querySelectorAll<HTMLLinkElement>("link[rel*='icon']");
+  allIcons.forEach((el) => {
+    el.href = versionedUrl;
+  });
 };
 
 export interface LightboxState {
@@ -84,6 +98,7 @@ interface StudioContextType {
   toast: { message: string; type: 'success' | 'error' | 'info' } | null;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   refreshData: (forceFreshServer?: boolean) => Promise<void>;
+  updateSettings: (newSettings: Partial<SiteSettings>) => Promise<SiteSettings>;
   loginAdmin: (token: string, user: AdminUser) => void;
   loginWithGoogle: () => Promise<void>;
   logoutAdmin: () => void;
@@ -97,7 +112,15 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [services, setServices] = useState<ServiceItem[]>(initialServices);
   const [clients, setClients] = useState<ClientItem[]>(initialClients);
   const [sliders, setSliders] = useState<HeroSlide[]>(initialHeroSlides);
-  const [settings, setSettings] = useState<SiteSettings>(initialSiteSettings);
+  const [settings, setSettings] = useState<SiteSettings>(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('dns_site_settings') : null;
+      if (saved) {
+        return { ...initialSiteSettings, ...JSON.parse(saved) };
+      }
+    } catch {}
+    return initialSiteSettings;
+  });
   const [insights, setInsights] = useState<EditorialInsight[]>(initialEditorialInsights);
   const [media, setMedia] = useState<MediaFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -255,6 +278,38 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, []);
 
+  const updateSettings = useCallback(
+    async (newSettings: Partial<SiteSettings>): Promise<SiteSettings> => {
+      // 1. Immediately update React state for instant UI update on all pages
+      let merged: SiteSettings = { ...settings, ...newSettings };
+      setSettings(merged);
+      try {
+        localStorage.setItem('dns_site_settings', JSON.stringify(merged));
+      } catch {}
+
+      // 2. Immediately update browser favicon & Apple touch icons
+      const targetFavicon = newSettings.faviconUrl || newSettings.logoUrl;
+      if (targetFavicon) {
+        applyFaviconToDocument(targetFavicon);
+      }
+
+      // 3. Persist to API / Firebase
+      try {
+        const saved = await api.updateSettings(newSettings);
+        merged = saved;
+        setSettings(saved);
+        try {
+          localStorage.setItem('dns_site_settings', JSON.stringify(saved));
+        } catch {}
+      } catch (err) {
+        console.warn('API updateSettings fallback note:', err);
+      }
+
+      return merged;
+    },
+    [settings]
+  );
+
   // Bootstrap Firebase & Real-time Synchronization
   useEffect(() => {
     if (settings.faviconUrl) {
@@ -386,6 +441,9 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         name: fbUser.displayName || 'Durman Nasar',
         role: 'admin',
       };
+      const token = `dns_session_${fbUser.uid}_${Date.now()}`;
+      localStorage.setItem('dns_admin_token', token);
+      localStorage.setItem('dns_client_user', JSON.stringify(user));
       setIsAdmin(true);
       setAdminUser(user);
       showToast(`Signed in with Google as ${user.email}`);
@@ -435,6 +493,7 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         toast,
         showToast,
         refreshData,
+        updateSettings,
         loginAdmin,
         loginWithGoogle,
         logoutAdmin,

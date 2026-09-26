@@ -5,7 +5,7 @@ import { api } from '../../services/api';
 import { SiteSettings } from '../../types';
 
 export const AdminSettings: React.FC = () => {
-  const { settings, refreshData, showToast } = useStudio();
+  const { settings, updateSettings, showToast } = useStudio();
   const [formData, setFormData] = useState<SiteSettings>({ ...settings });
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -16,8 +16,7 @@ export const AdminSettings: React.FC = () => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      await api.updateSettings(formData);
-      await refreshData();
+      await updateSettings(formData);
       showToast('Studio settings and SEO configuration updated');
     } catch (err: any) {
       showToast(err.message || 'Error saving settings', 'error');

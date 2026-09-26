@@ -22,7 +22,7 @@ import { api } from '../../services/api';
 import { MediaPickerModal } from '../../components/MediaPickerModal';
 
 export const AdminLogoFavicon: React.FC = () => {
-  const { settings, refreshData, showToast } = useStudio();
+  const { settings, updateSettings, showToast } = useStudio();
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showMediaPicker, setShowMediaPicker] = useState(false);
@@ -64,22 +64,21 @@ export const AdminLogoFavicon: React.FC = () => {
       // Create local object URL for instant preview
       const localPreview = URL.createObjectURL(file);
       setPreviewUrl(localPreview);
-      applyFaviconToDocument(localPreview);
 
       // Upload via API
       const result = await api.uploadFavicon(file);
-      if (result.success && result.fileUrl) {
-        setPreviewUrl(result.fileUrl);
-        await api.updateSettings({
-          faviconUrl: result.fileUrl,
-          logoUrl: result.fileUrl,
-          appleTouchIconUrl: result.fileUrl,
-          faviconUpdatedAt: new Date().toISOString(),
-        });
-        applyFaviconToDocument(result.fileUrl);
-        await refreshData(true);
-        showToast('Logo Favicon berhasil diunggah dan terpasang aktif di website!');
-      }
+      const finalUrl = result.fileUrl || localPreview;
+      setPreviewUrl(finalUrl);
+
+      // Instantly update StudioContext settings (updates Navbar, Footer, Admin, and localStorage)
+      await updateSettings({
+        faviconUrl: finalUrl,
+        logoUrl: finalUrl,
+        appleTouchIconUrl: finalUrl,
+        faviconUpdatedAt: new Date().toISOString(),
+      });
+
+      showToast('Logo & Favicon berhasil diunggah dan terpasang aktif di website!');
     } catch (err: any) {
       console.error('Error uploading favicon:', err);
       showToast(err.message || 'Gagal mengunggah file favicon.');
@@ -115,14 +114,12 @@ export const AdminLogoFavicon: React.FC = () => {
     try {
       const defaultUrl = '/favicon.svg';
       setPreviewUrl(defaultUrl);
-      applyFaviconToDocument(defaultUrl);
-      await api.updateSettings({
+      await updateSettings({
         faviconUrl: defaultUrl,
         logoUrl: defaultUrl,
         appleTouchIconUrl: '/apple-touch-icon.png',
         faviconUpdatedAt: new Date().toISOString(),
       });
-      await refreshData(true);
       showToast('Favicon dikembalikan ke logo bawaan (monogram dns’)!');
     } catch (err) {
       showToast('Gagal mereset favicon.');
@@ -136,14 +133,12 @@ export const AdminLogoFavicon: React.FC = () => {
     setIsSaving(true);
     try {
       setPreviewUrl(url);
-      applyFaviconToDocument(url);
-      await api.updateSettings({
+      await updateSettings({
         faviconUrl: url,
         logoUrl: url,
         appleTouchIconUrl: url,
         faviconUpdatedAt: new Date().toISOString(),
       });
-      await refreshData(true);
       showToast('Favicon diperbarui dari Media Library!');
     } catch {
       showToast('Gagal menerapkan favicon dari Media Library.');

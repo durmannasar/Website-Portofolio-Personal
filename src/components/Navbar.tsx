@@ -9,8 +9,10 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
-  const { isAdmin } = useStudio();
+  const { isAdmin, settings } = useStudio();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const activeLogo = settings.logoUrl || settings.faviconUrl || '/favicon.svg';
 
   const navLinks = [
     { label: 'Work', path: '/work' },
@@ -41,9 +43,12 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
           className="text-left group cursor-pointer focus:outline-none flex items-center gap-3"
         >
           <img
-            src="/favicon.svg"
+            src={activeLogo}
             alt="Durman Nasar Studio logo emblem"
             className="w-8 h-8 rounded-sm object-contain group-hover:scale-105 transition-transform"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/favicon.svg';
+            }}
           />
           <span className="font-display text-xl sm:text-2xl font-bold tracking-tight text-white group-hover:text-[#E2B714] transition-colors whitespace-nowrap">
             Durman Nasar Studio

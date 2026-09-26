@@ -63,10 +63,20 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
           {/* Col 1 & 2: Brand Lockup & Disciplines */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="space-y-2">
-              <span className="font-display text-2xl font-bold text-white tracking-tight">
-                {settings.studioName || 'Durman Nasar Studio'}
-              </span>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <img
+                  src={settings.logoUrl || settings.faviconUrl || '/favicon.svg'}
+                  alt={settings.studioName || 'Durman Nasar Studio'}
+                  className="w-8 h-8 rounded-sm object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/favicon.svg';
+                  }}
+                />
+                <span className="font-display text-2xl font-bold text-white tracking-tight">
+                  {settings.studioName || 'Durman Nasar Studio'}
+                </span>
+              </div>
               <p className="text-xs text-neutral-400 max-w-md leading-relaxed">
                 Multidisciplinary creative studio bridging strategic thinking with uncompromising craft across digital, motion, and spatial architecture.
               </p>
