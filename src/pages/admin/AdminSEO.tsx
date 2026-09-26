@@ -39,7 +39,7 @@ export const AdminSEO: React.FC = () => {
       '/src/assets/images/hero_studio_showcase_1790391271997.jpg',
     twitterHandle: settings.twitterHandle || '@durmannasar',
     canonicalBaseUrl:
-      settings.canonicalBaseUrl || 'https://durmannasarstudio.com',
+      settings.canonicalBaseUrl || 'https://www.durmannasarstudio.com',
     indexingStatus: settings.indexingStatus || 'index, follow',
     searchConsoleVerification:
       settings.searchConsoleVerification ||
@@ -47,7 +47,7 @@ export const AdminSEO: React.FC = () => {
     bingVerification: settings.bingVerification || 'msvalidate.01=DNS_STUDIO_VERIFY',
     robotsTxtCustom:
       settings.robotsTxtCustom ||
-      `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\n\nSitemap: https://durmannasarstudio.com/sitemap.xml`,
+      `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /cpanel\nDisallow: /api/\n\nSitemap: https://www.durmannasarstudio.com/sitemap.xml`,
   });
 
   const [activeTab, setActiveTab] = useState<'serp' | 'social' | 'indexation' | 'schema' | 'audit'>('serp');
@@ -94,10 +94,10 @@ export const AdminSEO: React.FC = () => {
       '@graph': [
         {
           '@type': 'ProfessionalService',
-          '@id': `${formData.canonicalBaseUrl || 'https://durmannasarstudio.com'}#studio`,
+          '@id': `${formData.canonicalBaseUrl || 'https://www.durmannasarstudio.com'}#studio`,
           name: settings.studioName || 'Durman Nasar Studio',
-          url: formData.canonicalBaseUrl || 'https://durmannasarstudio.com',
-          logo: `${formData.canonicalBaseUrl || 'https://durmannasarstudio.com'}/logo.svg`,
+          url: formData.canonicalBaseUrl || 'https://www.durmannasarstudio.com',
+          logo: `${formData.canonicalBaseUrl || 'https://www.durmannasarstudio.com'}/logo.svg`,
           email: settings.email || 'drmn@durmannasarstudio.com',
           telephone: settings.phone || '+628568439341',
           description: formData.seoDescription,
@@ -117,11 +117,11 @@ export const AdminSEO: React.FC = () => {
         },
         {
           '@type': 'Person',
-          '@id': `${formData.canonicalBaseUrl || 'https://durmannasarstudio.com'}#durman`,
+          '@id': `${formData.canonicalBaseUrl || 'https://www.durmannasarstudio.com'}#durman`,
           name: 'Durman Nasar',
           jobTitle: 'Creative Director & Founder',
           worksFor: {
-            '@id': `${formData.canonicalBaseUrl || 'https://durmannasarstudio.com'}#studio`,
+            '@id': `${formData.canonicalBaseUrl || 'https://www.durmannasarstudio.com'}#studio`,
           },
         },
       ],
@@ -385,7 +385,7 @@ export const AdminSEO: React.FC = () => {
                   type="url"
                   value={formData.canonicalBaseUrl || ''}
                   onChange={(e) => setFormData({ ...formData, canonicalBaseUrl: e.target.value })}
-                  placeholder="https://durmannasarstudio.com"
+                  placeholder="https://www.durmannasarstudio.com"
                   className="w-full bg-white/5 border border-white/10 px-3.5 py-2.5 text-white font-mono focus:outline-none focus:border-[#E2B714]"
                 />
               </div>
@@ -442,7 +442,7 @@ export const AdminSEO: React.FC = () => {
               </div>
               <div className="p-4 space-y-1.5">
                 <span className="text-[10px] font-mono uppercase text-neutral-400">
-                  {formData.canonicalBaseUrl?.replace('https://', '') || 'durmannasarstudio.com'}
+                  {formData.canonicalBaseUrl?.replace('https://', '') || 'www.durmannasarstudio.com'}
                 </span>
                 <h4 className="font-bold text-white text-sm line-clamp-1">
                   {formData.seoTitle}
@@ -465,7 +465,7 @@ export const AdminSEO: React.FC = () => {
                   type="text"
                   value={formData.ogImageUrl || ''}
                   onChange={(e) => setFormData({ ...formData, ogImageUrl: e.target.value })}
-                  placeholder="https://durmannasarstudio.com/uploads/share-card.jpg"
+                  placeholder="https://www.durmannasarstudio.com/uploads/share-card.jpg"
                   className="flex-1 bg-white/5 border border-white/10 px-3.5 py-2 text-white font-mono"
                 />
                 <button

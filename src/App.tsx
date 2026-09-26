@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { StudioProvider, useStudio } from './context/StudioContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
@@ -13,32 +13,50 @@ import { ContactPage } from './pages/ContactPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-import { AdminLogin } from './pages/admin/AdminLogin';
-import { AdminLayout } from './pages/admin/AdminLayout';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
-import { AdminProjects } from './pages/admin/AdminProjects';
-import { AdminMedia } from './pages/admin/AdminMedia';
-import { AdminSliders } from './pages/admin/AdminSliders';
-import { AdminServices } from './pages/admin/AdminServices';
-import { AdminClients } from './pages/admin/AdminClients';
-import { AdminInquiries } from './pages/admin/AdminInquiries';
-import { AdminSettings } from './pages/admin/AdminSettings';
-import { AdminAnalytics } from './pages/admin/AdminAnalytics';
-import { AdminSEO } from './pages/admin/AdminSEO';
-import { AdminInsights } from './pages/admin/AdminInsights';
-import { AdminContentProtection } from './pages/admin/AdminContentProtection';
 import { InsightsPage } from './pages/InsightsPage';
 import { InsightDetailPage } from './pages/InsightDetailPage';
 import { trackPageView } from './utils/analytics';
 import { useContentProtection } from './hooks/useContentProtection';
-import { Check, AlertCircle, Info, X } from 'lucide-react';
+import { Check, AlertCircle, Info, RefreshCw } from 'lucide-react';
+
+// Route-based Code Splitting: Lazy-load Admin CMS components for optimal public bundle performance
+const AdminLogin = lazy(() => import('./pages/admin/AdminLogin').then((m) => ({ default: m.AdminLogin })));
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout').then((m) => ({ default: m.AdminLayout })));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })));
+const AdminProjects = lazy(() => import('./pages/admin/AdminProjects').then((m) => ({ default: m.AdminProjects })));
+const AdminMedia = lazy(() => import('./pages/admin/AdminMedia').then((m) => ({ default: m.AdminMedia })));
+const AdminSliders = lazy(() => import('./pages/admin/AdminSliders').then((m) => ({ default: m.AdminSliders })));
+const AdminServices = lazy(() => import('./pages/admin/AdminServices').then((m) => ({ default: m.AdminServices })));
+const AdminClients = lazy(() => import('./pages/admin/AdminClients').then((m) => ({ default: m.AdminClients })));
+const AdminInquiries = lazy(() => import('./pages/admin/AdminInquiries').then((m) => ({ default: m.AdminInquiries })));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings').then((m) => ({ default: m.AdminSettings })));
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics').then((m) => ({ default: m.AdminAnalytics })));
+const AdminSEO = lazy(() => import('./pages/admin/AdminSEO').then((m) => ({ default: m.AdminSEO })));
+const AdminInsights = lazy(() => import('./pages/admin/AdminInsights').then((m) => ({ default: m.AdminInsights })));
+const AdminContentProtection = lazy(() => import('./pages/admin/AdminContentProtection').then((m) => ({ default: m.AdminContentProtection })));
+
+function AdminLoadingFallback() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#090A0F] text-neutral-400 font-mono text-xs gap-3">
+      <RefreshCw className="w-5 h-5 text-[#E2B714] animate-spin" />
+      <span className="text-white tracking-wider uppercase text-[11px]">Durman Nasar Studio · Loading CMS Portal...</span>
+    </div>
+  );
+}
 
 function AppContent() {
   const { isAdmin, toast } = useStudio();
   const [currentPath, setCurrentPath] = useState(window.location.pathname || '/');
   const [adminTab, setAdminTab] = useState('dashboard');
 
-  const isPublic = !currentPath.startsWith('/admin');
+  // Both /cpanel and /admin are recognized as the Studio CMS route
+  const isAdminRoute =
+    currentPath === '/cpanel' ||
+    currentPath.startsWith('/cpanel/') ||
+    currentPath === '/admin' ||
+    currentPath.startsWith('/admin/');
+
+  const isPublic = !isAdminRoute;
 
   // Activate Content Protection on public routes
   useContentProtection({ isPublic });
@@ -59,36 +77,42 @@ function AppContent() {
     trackPageView(path, document.title);
   };
 
-  // Render Admin Section
-  if (currentPath === '/admin' || currentPath.startsWith('/admin/')) {
+  // Render Admin Section (Supporting both /cpanel and /admin)
+  if (isAdminRoute) {
+    const targetAdminPath = currentPath.startsWith('/cpanel') ? '/cpanel' : '/admin';
+
     if (!isAdmin) {
       return (
-        <AdminLogin
-          onLoginSuccess={() => navigate('/admin')}
-          onBackToSite={() => navigate('/')}
-        />
+        <Suspense fallback={<AdminLoadingFallback />}>
+          <AdminLogin
+            onLoginSuccess={() => navigate(targetAdminPath)}
+            onBackToSite={() => navigate('/')}
+          />
+        </Suspense>
       );
     }
 
     return (
-      <AdminLayout
-        currentTab={adminTab}
-        onTabChange={(tab) => setAdminTab(tab)}
-        onViewSite={() => navigate('/')}
-      >
-        {adminTab === 'dashboard' && <AdminDashboard onNavigateTab={(t) => setAdminTab(t)} />}
-        {adminTab === 'projects' && <AdminProjects />}
-        {adminTab === 'media' && <AdminMedia />}
-        {adminTab === 'sliders' && <AdminSliders />}
-        {adminTab === 'services' && <AdminServices />}
-        {adminTab === 'insights' && <AdminInsights />}
-        {adminTab === 'clients' && <AdminClients />}
-        {adminTab === 'inquiries' && <AdminInquiries />}
-        {adminTab === 'analytics' && <AdminAnalytics />}
-        {adminTab === 'seo' && <AdminSEO />}
-        {adminTab === 'protection' && <AdminContentProtection />}
-        {adminTab === 'settings' && <AdminSettings />}
-      </AdminLayout>
+      <Suspense fallback={<AdminLoadingFallback />}>
+        <AdminLayout
+          currentTab={adminTab}
+          onTabChange={(tab) => setAdminTab(tab)}
+          onViewSite={() => navigate('/')}
+        >
+          {adminTab === 'dashboard' && <AdminDashboard onNavigateTab={(t) => setAdminTab(t)} />}
+          {adminTab === 'projects' && <AdminProjects />}
+          {adminTab === 'media' && <AdminMedia />}
+          {adminTab === 'sliders' && <AdminSliders />}
+          {adminTab === 'services' && <AdminServices />}
+          {adminTab === 'insights' && <AdminInsights />}
+          {adminTab === 'clients' && <AdminClients />}
+          {adminTab === 'inquiries' && <AdminInquiries />}
+          {adminTab === 'analytics' && <AdminAnalytics />}
+          {adminTab === 'seo' && <AdminSEO />}
+          {adminTab === 'protection' && <AdminContentProtection />}
+          {adminTab === 'settings' && <AdminSettings />}
+        </AdminLayout>
+      </Suspense>
     );
   }
 

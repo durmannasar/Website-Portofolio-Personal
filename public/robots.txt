@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /cpanel
+Disallow: /api/
+
+Sitemap: https://www.durmannasarstudio.com/sitemap.xml

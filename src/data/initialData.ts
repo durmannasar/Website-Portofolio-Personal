@@ -30,6 +30,9 @@ export const initialSiteSettings: SiteSettings = {
   completedProjects: 140,
   gaMeasurementId: 'G-DURMANNASAR',
   searchConsoleVerification: 'google-site-verification-durman-nasar-studio',
+  canonicalBaseUrl: 'https://www.durmannasarstudio.com',
+  indexingStatus: 'index, follow',
+  robotsTxtCustom: 'User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /cpanel\nDisallow: /api/\n\nSitemap: https://www.durmannasarstudio.com/sitemap.xml',
   contentProtection: defaultContentProtection,
   socials: {
     instagram: 'https://instagram.com/durmannasar',

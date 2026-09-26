@@ -285,7 +285,7 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setIsAdmin(true);
         setAdminUser({
           id: fbUser.uid,
-          email: fbUser.email || 'admin@durmannasarstudio.com',
+          email: fbUser.email || 'drmn@durmannasarstudio.com',
           name: fbUser.displayName || fbUser.email?.split('@')[0] || 'Studio Director',
           role: 'admin',
         });

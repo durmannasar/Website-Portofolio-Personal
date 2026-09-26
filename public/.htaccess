@@ -1,0 +1,95 @@
+# ==============================================================================
+# Durman Nasar Studio — Hostinger Production Apache / LiteSpeed Configuration
+# Target Domain: https://www.durmannasarstudio.com
+# ==============================================================================
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 1. Force HTTPS
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # 2. Canonical www Redirection (durmannasarstudio.com -> www.durmannasarstudio.com)
+  RewriteCond %{HTTP_HOST} ^durmannasarstudio\.com$ [NC]
+  RewriteRule ^(.*)$ https://www.durmannasarstudio.com/$1 [L,R=301]
+
+  # 3. Allow direct access to existing physical files or directories
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # 4. Allow direct access to robots.txt, sitemap.xml, and uploads
+  RewriteRule ^robots\.txt$ - [L]
+  RewriteRule ^sitemap\.xml$ - [L]
+  RewriteRule ^uploads/(.*)$ - [L]
+
+  # 5. SPA Client-Side Routing Fallback (For /cpanel, /admin, /work, /about, /services, etc.)
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# ==============================================================================
+# Security Headers & MIME Types
+# ==============================================================================
+<IfModule mod_headers.c>
+  # Prevent MIME type sniffing
+  Header always set X-Content-Type-Options "nosniff"
+  # Clickjacking protection
+  Header always set X-Frame-Options "SAMEORIGIN"
+  # Cross-Site Scripting protection
+  Header always set X-XSS-Protection "1; mode=block"
+  # Referrer policy for SEO & Privacy
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  # Permissions policy
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+</IfModule>
+
+# ==============================================================================
+# Browser Caching & Performance (Core Web Vitals Optimization)
+# ==============================================================================
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault "access plus 1 month"
+
+  # HTML & App Entry (No-cache for instant updates)
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType application/xhtml+xml "access plus 0 seconds"
+  ExpiresByType application/json "access plus 0 seconds"
+  ExpiresByType application/xml "access plus 0 seconds"
+
+  # CSS, JavaScript & Fonts (Hashed assets cache for 1 year)
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType text/javascript "access plus 1 year"
+  ExpiresByType font/woff "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType application/font-woff "access plus 1 year"
+  ExpiresByType application/font-woff2 "access plus 1 year"
+
+  # Images & Media
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/avif "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType image/x-icon "access plus 1 year"
+  ExpiresByType video/mp4 "access plus 1 month"
+  ExpiresByType video/webm "access plus 1 month"
+</IfModule>
+
+# ==============================================================================
+# Gzip / Deflate Compression
+# ==============================================================================
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/plain
+  AddOutputFilterByType DEFLATE text/html
+  AddOutputFilterByType DEFLATE text/xml
+  AddOutputFilterByType DEFLATE text/css
+  AddOutputFilterByType DEFLATE application/xml
+  AddOutputFilterByType DEFLATE application/xhtml+xml
+  AddOutputFilterByType DEFLATE application/rss+xml
+  AddOutputFilterByType DEFLATE application/javascript
+  AddOutputFilterByType DEFLATE application/x-javascript
+  AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>

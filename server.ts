@@ -409,7 +409,13 @@ app.put('/api/settings', requireAuth, (req, res) => {
 // Search Engine Indexation: Robots.txt & Dynamic Sitemap.xml
 app.get('/robots.txt', (_req, res) => {
   const settings = db.getSettings();
-  const defaultRobots = `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\n\nSitemap: ${settings.canonicalBaseUrl || 'https://durmannasarstudio.com'}/sitemap.xml`;
+  const defaultRobots = `User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /cpanel
+Disallow: /api/
+
+Sitemap: ${settings.canonicalBaseUrl || 'https://www.durmannasarstudio.com'}/sitemap.xml`;
   res.type('text/plain');
   return res.send(settings.robotsTxtCustom || defaultRobots);
 });
@@ -494,63 +500,6 @@ app.get('/api/stats', requireAuth, (_req, res) => {
     totalInsights: insights.length,
     recentInquiries: inquiries.slice(0, 5),
   });
-});
-
-// XML Sitemap Generator
-app.get('/sitemap.xml', (_req, res) => {
-  const baseUrl = 'https://durmannasarstudio.com';
-  const projects = db.getProjects().filter((p) => p.status === 'published');
-  const now = new Date().toISOString().split('T')[0];
-
-  const staticPages = [
-    { url: '/', priority: '1.0', changefreq: 'weekly' },
-    { url: '/work', priority: '0.9', changefreq: 'weekly' },
-    { url: '/services', priority: '0.9', changefreq: 'monthly' },
-    { url: '/about', priority: '0.8', changefreq: 'monthly' },
-    { url: '/clients', priority: '0.7', changefreq: 'monthly' },
-    { url: '/contact', priority: '0.8', changefreq: 'monthly' },
-    { url: '/privacy', priority: '0.3', changefreq: 'yearly' },
-    { url: '/terms', priority: '0.3', changefreq: 'yearly' },
-  ];
-
-  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
-  xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
-
-  staticPages.forEach((page) => {
-    xml += `  <url>\n`;
-    xml += `    <loc>${baseUrl}${page.url}</loc>\n`;
-    xml += `    <lastmod>${now}</lastmod>\n`;
-    xml += `    <changefreq>${page.changefreq}</changefreq>\n`;
-    xml += `    <priority>${page.priority}</priority>\n`;
-    xml += `  </url>\n`;
-  });
-
-  projects.forEach((proj) => {
-    xml += `  <url>\n`;
-    xml += `    <loc>${baseUrl}/work/${proj.slug}</loc>\n`;
-    xml += `    <lastmod>${(proj.updatedAt || proj.createdAt).split('T')[0]}</lastmod>\n`;
-    xml += `    <changefreq>monthly</changefreq>\n`;
-    xml += `    <priority>0.85</priority>\n`;
-    xml += `  </url>\n`;
-  });
-
-  xml += `</urlset>`;
-
-  res.header('Content-Type', 'application/xml');
-  return res.send(xml);
-});
-
-// Robots.txt
-app.get('/robots.txt', (_req, res) => {
-  const robots = `User-agent: *
-Allow: /
-Disallow: /admin
-Disallow: /api/
-
-Sitemap: https://durmannasarstudio.com/sitemap.xml
-`;
-  res.header('Content-Type', 'text/plain');
-  return res.send(robots);
 });
 
 // Mount Vite or Static Frontend

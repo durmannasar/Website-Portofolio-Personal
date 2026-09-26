@@ -7,6 +7,7 @@ import {
   onAuthStateChanged,
   User as FirebaseUser,
 } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
 import {
   getFirestore,
   doc,
@@ -39,13 +40,25 @@ import {
   initialEditorialInsights,
 } from '../data/initialData';
 
-// Initialize Firebase App
-export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+// Flexible Production Firebase Config: Uses environment variables if set, fallback to bundled config
+const effectiveConfig = {
+  ...firebaseConfig,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfig.projectId,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfig.appId,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfig.apiKey,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfig.authDomain,
+  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID || firebaseConfig.firestoreDatabaseId,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfig.storageBucket,
+};
 
-// CRITICAL: Must use firestoreDatabaseId from firebase-applet-config.json
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+// Initialize Firebase App
+export const app = getApps().length ? getApp() : initializeApp(effectiveConfig);
+
+// CRITICAL: Must use firestoreDatabaseId from effective configuration
+export const db = getFirestore(app, effectiveConfig.firestoreDatabaseId);
 
 export const auth = getAuth(app);
+export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
