@@ -108,10 +108,50 @@ interface StudioContextType {
 const StudioContext = createContext<StudioContextType | undefined>(undefined);
 
 export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const [services, setServices] = useState<ServiceItem[]>(initialServices);
-  const [clients, setClients] = useState<ClientItem[]>(initialClients);
-  const [sliders, setSliders] = useState<HeroSlide[]>(initialHeroSlides);
+  const [projects, setProjects] = useState<Project[]>(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('dns_projects') : null;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return initialProjects;
+  });
+
+  const [services, setServices] = useState<ServiceItem[]>(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('dns_services') : null;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return initialServices;
+  });
+
+  const [clients, setClients] = useState<ClientItem[]>(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('dns_clients') : null;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return initialClients;
+  });
+
+  const [sliders, setSliders] = useState<HeroSlide[]>(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('dns_sliders') : null;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return initialHeroSlides;
+  });
+
   const [settings, setSettings] = useState<SiteSettings>(() => {
     try {
       const saved = typeof window !== 'undefined' ? localStorage.getItem('dns_site_settings') : null;
@@ -121,7 +161,17 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch {}
     return initialSiteSettings;
   });
-  const [insights, setInsights] = useState<EditorialInsight[]>(initialEditorialInsights);
+
+  const [insights, setInsights] = useState<EditorialInsight[]>(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('dns_insights') : null;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return initialEditorialInsights;
+  });
   const [media, setMedia] = useState<MediaFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFirebaseLive, setIsFirebaseLive] = useState(false);
@@ -216,63 +266,82 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, []);
 
-  // Fetch Fresh Data Directly From Server (Bypassing any cache)
+  // Fetch Fresh Data (Always loads latest up-to-date content on sign-in, republish, or refresh with zero stale cache)
   const refreshData = useCallback(async (forceFreshServer = false) => {
     setIsLoading(true);
     try {
-      if (forceFreshServer) {
-        // Query directly from Firestore Server (zero local cache)
-        const fresh = await fetchFreshDataFromServer();
-        if (fresh.projects?.length) setProjects(fresh.projects);
-        if (fresh.services?.length) setServices(fresh.services);
-        if (fresh.insights?.length) setInsights(fresh.insights);
-        if (fresh.clients?.length) setClients(fresh.clients);
-        if (fresh.sliders?.length) setSliders(fresh.sliders);
-        if (fresh.settings) {
-          setSettings(fresh.settings);
-          initGTM(fresh.settings.gtmContainerId || 'GTM-MHCKKWJQ');
-          if (fresh.settings.customTrackingCode || fresh.settings.gaMeasurementId) {
-            initGA(fresh.settings.gaMeasurementId || '', {
-              customScript: fresh.settings.customTrackingCode,
-              anonymizeIp: fresh.settings.anonymizeIp,
-              enhancedMeasurement: fresh.settings.enhancedMeasurement,
-            });
-          }
-        }
-        setIsFirebaseLive(true);
-      } else {
-        // Standard initial load with API fallback
-        const [projData, srvData, clientData, slideData, settData, mediaData, insightData] =
-          await Promise.all([
-            api.getProjects(),
-            api.getServices(),
-            api.getClients(),
-            api.getSliders(),
-            api.getSettings(),
-            api.getMedia(),
-            api.getInsights(),
-          ]);
+      // 1. Fetch live API data with strict zero-cache timestamping
+      const [projData, srvData, clientData, slideData, settData, mediaData, insightData] =
+        await Promise.all([
+          api.getProjects(),
+          api.getServices(),
+          api.getClients(),
+          api.getSliders(),
+          api.getSettings(),
+          api.getMedia(),
+          api.getInsights(),
+        ]);
 
-        if (projData?.length) setProjects(projData);
-        if (srvData?.length) setServices(srvData);
-        if (clientData?.length) setClients(clientData);
-        if (slideData?.length) setSliders(slideData);
-        if (insightData?.length) setInsights(insightData);
-        if (settData) {
-          setSettings(settData);
-          initGTM(settData.gtmContainerId || 'GTM-MHCKKWJQ');
-          if (settData.customTrackingCode || settData.gaMeasurementId) {
-            initGA(settData.gaMeasurementId || '', {
-              customScript: settData.customTrackingCode,
-              anonymizeIp: settData.anonymizeIp,
-              enhancedMeasurement: settData.enhancedMeasurement,
-            });
-          }
-        }
-        if (mediaData) setMedia(mediaData);
+      let resolvedProjects = projData;
+      let resolvedServices = srvData;
+      let resolvedClients = clientData;
+      let resolvedSliders = slideData;
+      let resolvedSettings = settData;
+      let resolvedInsights = insightData;
+
+      // 2. Fetch directly from Firestore Server to check for live cloud mutations
+      try {
+        const fresh = await fetchFreshDataFromServer();
+        if (fresh.projects?.length) resolvedProjects = fresh.projects;
+        if (fresh.services?.length) resolvedServices = fresh.services;
+        if (fresh.clients?.length) resolvedClients = fresh.clients;
+        if (fresh.sliders?.length) resolvedSliders = fresh.sliders;
+        if (fresh.insights?.length) resolvedInsights = fresh.insights;
+        if (fresh.settings) resolvedSettings = fresh.settings;
+        setIsFirebaseLive(true);
+      } catch {
+        // Continue with latest API/local data
       }
+
+      // 3. Atomically synchronize React state and local storage so any future refresh renders instant up-to-date data
+      if (resolvedProjects?.length) {
+        setProjects(resolvedProjects);
+        try { localStorage.setItem('dns_projects', JSON.stringify(resolvedProjects)); } catch {}
+      }
+      if (resolvedServices?.length) {
+        setServices(resolvedServices);
+        try { localStorage.setItem('dns_services', JSON.stringify(resolvedServices)); } catch {}
+      }
+      if (resolvedClients?.length) {
+        setClients(resolvedClients);
+        try { localStorage.setItem('dns_clients', JSON.stringify(resolvedClients)); } catch {}
+      }
+      if (resolvedSliders?.length) {
+        setSliders(resolvedSliders);
+        try { localStorage.setItem('dns_sliders', JSON.stringify(resolvedSliders)); } catch {}
+      }
+      if (resolvedInsights?.length) {
+        setInsights(resolvedInsights);
+        try { localStorage.setItem('dns_insights', JSON.stringify(resolvedInsights)); } catch {}
+      }
+      if (resolvedSettings) {
+        setSettings(resolvedSettings);
+        try { localStorage.setItem('dns_site_settings', JSON.stringify(resolvedSettings)); } catch {}
+        if (resolvedSettings.faviconUrl || resolvedSettings.logoUrl) {
+          applyFaviconToDocument(resolvedSettings.faviconUrl || resolvedSettings.logoUrl);
+        }
+        initGTM(resolvedSettings.gtmContainerId || 'GTM-MHCKKWJQ');
+        if (resolvedSettings.customTrackingCode || resolvedSettings.gaMeasurementId) {
+          initGA(resolvedSettings.gaMeasurementId || '', {
+            customScript: resolvedSettings.customTrackingCode,
+            anonymizeIp: resolvedSettings.anonymizeIp,
+            enhancedMeasurement: resolvedSettings.enhancedMeasurement,
+          });
+        }
+      }
+      if (mediaData) setMedia(mediaData);
     } catch (err) {
-      console.warn('Refresh note: falling back to live listeners', err);
+      console.warn('Refresh note: falling back to local cached listeners', err);
     } finally {
       setIsLoading(false);
     }
@@ -329,29 +398,50 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // Real-Time Listener: When CMS updates, Main Site immediately receives changes live
         unsubscribeFirestore = subscribeToFirestore({
           onProjectsUpdate: (updated) => {
-            setProjects(updated);
+            if (updated && updated.length > 0) {
+              setProjects(updated);
+              try { localStorage.setItem('dns_projects', JSON.stringify(updated)); } catch {}
+            }
           },
           onServicesUpdate: (updated) => {
-            setServices(updated);
+            if (updated && updated.length > 0) {
+              setServices(updated);
+              try { localStorage.setItem('dns_services', JSON.stringify(updated)); } catch {}
+            }
           },
           onInsightsUpdate: (updated) => {
-            setInsights(updated);
+            if (updated && updated.length > 0) {
+              setInsights(updated);
+              try { localStorage.setItem('dns_insights', JSON.stringify(updated)); } catch {}
+            }
           },
           onClientsUpdate: (updated) => {
-            setClients(updated);
+            if (updated && updated.length > 0) {
+              setClients(updated);
+              try { localStorage.setItem('dns_clients', JSON.stringify(updated)); } catch {}
+            }
           },
           onSlidersUpdate: (updated) => {
-            setSliders(updated);
+            if (updated && updated.length > 0) {
+              setSliders(updated);
+              try { localStorage.setItem('dns_sliders', JSON.stringify(updated)); } catch {}
+            }
           },
           onSettingsUpdate: (updated) => {
-            setSettings(updated);
-            initGTM(updated.gtmContainerId || 'GTM-MHCKKWJQ');
-            if (updated.customTrackingCode || updated.gaMeasurementId) {
-              initGA(updated.gaMeasurementId || '', {
-                customScript: updated.customTrackingCode,
-                anonymizeIp: updated.anonymizeIp,
-                enhancedMeasurement: updated.enhancedMeasurement,
-              });
+            if (updated) {
+              setSettings(updated);
+              try { localStorage.setItem('dns_site_settings', JSON.stringify(updated)); } catch {}
+              if (updated.faviconUrl || updated.logoUrl) {
+                applyFaviconToDocument(updated.faviconUrl || updated.logoUrl);
+              }
+              initGTM(updated.gtmContainerId || 'GTM-MHCKKWJQ');
+              if (updated.customTrackingCode || updated.gaMeasurementId) {
+                initGA(updated.gaMeasurementId || '', {
+                  customScript: updated.customTrackingCode,
+                  anonymizeIp: updated.anonymizeIp,
+                  enhancedMeasurement: updated.enhancedMeasurement,
+                });
+              }
             }
           },
         });

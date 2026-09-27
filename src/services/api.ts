@@ -66,6 +66,9 @@ async function fetchJson<T>(url: string, options: RequestInit = {}): Promise<T> 
   const token = getAuthToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
     ...(options.headers as Record<string, string>),
   };
 
@@ -73,7 +76,19 @@ async function fetchJson<T>(url: string, options: RequestInit = {}): Promise<T> 
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(url, { ...options, headers });
+  // Append timestamp cache-buster for GET requests to guarantee zero stale cache
+  let targetUrl = url;
+  const method = options.method?.toUpperCase() || 'GET';
+  if (method === 'GET') {
+    const separator = targetUrl.includes('?') ? '&' : '?';
+    targetUrl = `${targetUrl}${separator}_t=${Date.now()}`;
+  }
+
+  const res = await fetch(targetUrl, {
+    ...options,
+    headers,
+    cache: 'no-store',
+  });
 
   // Guard against static web hosts (Hostinger/Apache) returning index.html for 404 API calls
   const contentType = res.headers.get('content-type') || '';
@@ -235,8 +250,24 @@ export const api = {
       if (category && category !== 'All') query.set('category', category);
       if (status) query.set('status', status);
       const url = `/api/projects${query.toString() ? `?${query.toString()}` : ''}`;
-      return await fetchJson<Project[]>(url);
+      const data = await fetchJson<Project[]>(url);
+      if (!category && !status && Array.isArray(data)) {
+        try { localStorage.setItem('dns_projects', JSON.stringify(data)); } catch {}
+      }
+      return data;
     } catch {
+      try {
+        const raw = localStorage.getItem('dns_projects');
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list) && list.length > 0) {
+            let res = list;
+            if (category && category !== 'All') res = res.filter((p: Project) => p.category === category);
+            if (status) res = res.filter((p: Project) => p.status === status);
+            return res;
+          }
+        }
+      } catch {}
       return initialProjects;
     }
   },
@@ -245,6 +276,14 @@ export const api = {
     try {
       return await fetchJson<Project>(`/api/projects/${slugOrId}`);
     } catch {
+      try {
+        const raw = localStorage.getItem('dns_projects');
+        if (raw) {
+          const list: Project[] = JSON.parse(raw);
+          const found = list.find((p) => p.slug === slugOrId || p.id === slugOrId);
+          if (found) return found;
+        }
+      } catch {}
       const found = initialProjects.find(
         (p) => p.slug === slugOrId || p.id === slugOrId
       );
@@ -258,6 +297,12 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    try {
+      const raw = localStorage.getItem('dns_projects');
+      const list = raw ? JSON.parse(raw) : initialProjects;
+      list.unshift(saved);
+      localStorage.setItem('dns_projects', JSON.stringify(list));
+    } catch {}
     // Instant Firestore Real-Time Cloud Sync
     saveProjectToFirestore(saved).catch((err) =>
       console.warn('Firestore project sync note:', err)
@@ -270,6 +315,17 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(data),
     });
+    try {
+      const raw = localStorage.getItem('dns_projects');
+      const list: Project[] = raw ? JSON.parse(raw) : initialProjects;
+      const idx = list.findIndex((p) => p.id === id);
+      if (idx !== -1) {
+        list[idx] = { ...list[idx], ...updated };
+      } else {
+        list.push(updated);
+      }
+      localStorage.setItem('dns_projects', JSON.stringify(list));
+    } catch {}
     // Instant Firestore Real-Time Cloud Sync
     saveProjectToFirestore(updated).catch((err) =>
       console.warn('Firestore project update sync note:', err)
@@ -281,6 +337,13 @@ export const api = {
     const res = await fetchJson<{ success: boolean }>(`/api/projects/${id}`, {
       method: 'DELETE',
     });
+    try {
+      const raw = localStorage.getItem('dns_projects');
+      if (raw) {
+        const list: Project[] = JSON.parse(raw);
+        localStorage.setItem('dns_projects', JSON.stringify(list.filter((p) => p.id !== id)));
+      }
+    } catch {}
     deleteProjectFromFirestore(id).catch((err) =>
       console.warn('Firestore project delete sync note:', err)
     );
@@ -290,8 +353,17 @@ export const api = {
   // Services
   async getServices(): Promise<ServiceItem[]> {
     try {
-      return await fetchJson<ServiceItem[]>('/api/services');
+      const data = await fetchJson<ServiceItem[]>('/api/services');
+      try { localStorage.setItem('dns_services', JSON.stringify(data)); } catch {}
+      return data;
     } catch {
+      try {
+        const raw = localStorage.getItem('dns_services');
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list) && list.length > 0) return list;
+        }
+      } catch {}
       return initialServices;
     }
   },
@@ -301,6 +373,12 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    try {
+      const raw = localStorage.getItem('dns_services');
+      const list = raw ? JSON.parse(raw) : initialServices;
+      list.push(saved);
+      localStorage.setItem('dns_services', JSON.stringify(list));
+    } catch {}
     saveServiceToFirestore(saved).catch((err) =>
       console.warn('Firestore service sync note:', err)
     );
@@ -312,6 +390,13 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(data),
     });
+    try {
+      const raw = localStorage.getItem('dns_services');
+      const list: ServiceItem[] = raw ? JSON.parse(raw) : initialServices;
+      const idx = list.findIndex((s) => s.id === id);
+      if (idx !== -1) list[idx] = { ...list[idx], ...updated };
+      localStorage.setItem('dns_services', JSON.stringify(list));
+    } catch {}
     saveServiceToFirestore(updated).catch((err) =>
       console.warn('Firestore service update sync note:', err)
     );
@@ -322,6 +407,13 @@ export const api = {
     const res = await fetchJson<{ success: boolean }>(`/api/services/${id}`, {
       method: 'DELETE',
     });
+    try {
+      const raw = localStorage.getItem('dns_services');
+      if (raw) {
+        const list: ServiceItem[] = JSON.parse(raw);
+        localStorage.setItem('dns_services', JSON.stringify(list.filter((s) => s.id !== id)));
+      }
+    } catch {}
     deleteServiceFromFirestore(id).catch((err) =>
       console.warn('Firestore service delete sync note:', err)
     );
@@ -331,8 +423,17 @@ export const api = {
   // Editorial Insights
   async getInsights(): Promise<EditorialInsight[]> {
     try {
-      return await fetchJson<EditorialInsight[]>('/api/insights');
+      const data = await fetchJson<EditorialInsight[]>('/api/insights');
+      try { localStorage.setItem('dns_insights', JSON.stringify(data)); } catch {}
+      return data;
     } catch {
+      try {
+        const raw = localStorage.getItem('dns_insights');
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list) && list.length > 0) return list;
+        }
+      } catch {}
       return initialEditorialInsights;
     }
   },
@@ -346,6 +447,12 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    try {
+      const raw = localStorage.getItem('dns_insights');
+      const list = raw ? JSON.parse(raw) : initialEditorialInsights;
+      list.unshift(saved);
+      localStorage.setItem('dns_insights', JSON.stringify(list));
+    } catch {}
     saveInsightToFirestore(saved).catch((err) =>
       console.warn('Firestore insight sync note:', err)
     );
@@ -357,6 +464,13 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(data),
     });
+    try {
+      const raw = localStorage.getItem('dns_insights');
+      const list: EditorialInsight[] = raw ? JSON.parse(raw) : initialEditorialInsights;
+      const idx = list.findIndex((i) => i.id === id);
+      if (idx !== -1) list[idx] = { ...list[idx], ...updated };
+      localStorage.setItem('dns_insights', JSON.stringify(list));
+    } catch {}
     saveInsightToFirestore(updated).catch((err) =>
       console.warn('Firestore insight update sync note:', err)
     );
@@ -367,6 +481,13 @@ export const api = {
     const res = await fetchJson<{ success: boolean }>(`/api/insights/${id}`, {
       method: 'DELETE',
     });
+    try {
+      const raw = localStorage.getItem('dns_insights');
+      if (raw) {
+        const list: EditorialInsight[] = JSON.parse(raw);
+        localStorage.setItem('dns_insights', JSON.stringify(list.filter((i) => i.id !== id)));
+      }
+    } catch {}
     deleteInsightFromFirestore(id).catch((err) =>
       console.warn('Firestore insight delete sync note:', err)
     );
@@ -376,8 +497,17 @@ export const api = {
   // Sliders
   async getSliders(): Promise<HeroSlide[]> {
     try {
-      return await fetchJson<HeroSlide[]>('/api/sliders');
+      const data = await fetchJson<HeroSlide[]>('/api/sliders');
+      try { localStorage.setItem('dns_sliders', JSON.stringify(data)); } catch {}
+      return data;
     } catch {
+      try {
+        const raw = localStorage.getItem('dns_sliders');
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list) && list.length > 0) return list;
+        }
+      } catch {}
       return initialHeroSlides;
     }
   },
@@ -387,6 +517,12 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    try {
+      const raw = localStorage.getItem('dns_sliders');
+      const list = raw ? JSON.parse(raw) : initialHeroSlides;
+      list.push(saved);
+      localStorage.setItem('dns_sliders', JSON.stringify(list));
+    } catch {}
     saveSliderToFirestore(saved).catch((err) =>
       console.warn('Firestore slider sync note:', err)
     );
@@ -398,6 +534,13 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(data),
     });
+    try {
+      const raw = localStorage.getItem('dns_sliders');
+      const list: HeroSlide[] = raw ? JSON.parse(raw) : initialHeroSlides;
+      const idx = list.findIndex((s) => s.id === id);
+      if (idx !== -1) list[idx] = { ...list[idx], ...updated };
+      localStorage.setItem('dns_sliders', JSON.stringify(list));
+    } catch {}
     saveSliderToFirestore(updated).catch((err) =>
       console.warn('Firestore slider update sync note:', err)
     );
@@ -408,6 +551,13 @@ export const api = {
     const res = await fetchJson<{ success: boolean }>(`/api/sliders/${id}`, {
       method: 'DELETE',
     });
+    try {
+      const raw = localStorage.getItem('dns_sliders');
+      if (raw) {
+        const list: HeroSlide[] = JSON.parse(raw);
+        localStorage.setItem('dns_sliders', JSON.stringify(list.filter((s) => s.id !== id)));
+      }
+    } catch {}
     deleteSliderFromFirestore(id).catch((err) =>
       console.warn('Firestore slider delete sync note:', err)
     );
@@ -417,8 +567,17 @@ export const api = {
   // Clients
   async getClients(): Promise<ClientItem[]> {
     try {
-      return await fetchJson<ClientItem[]>('/api/clients');
+      const data = await fetchJson<ClientItem[]>('/api/clients');
+      try { localStorage.setItem('dns_clients', JSON.stringify(data)); } catch {}
+      return data;
     } catch {
+      try {
+        const raw = localStorage.getItem('dns_clients');
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list) && list.length > 0) return list;
+        }
+      } catch {}
       return initialClients;
     }
   },
@@ -428,6 +587,12 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    try {
+      const raw = localStorage.getItem('dns_clients');
+      const list = raw ? JSON.parse(raw) : initialClients;
+      list.push(saved);
+      localStorage.setItem('dns_clients', JSON.stringify(list));
+    } catch {}
     saveClientToFirestore(saved).catch((err) =>
       console.warn('Firestore client sync note:', err)
     );
@@ -439,6 +604,13 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(data),
     });
+    try {
+      const raw = localStorage.getItem('dns_clients');
+      const list: ClientItem[] = raw ? JSON.parse(raw) : initialClients;
+      const idx = list.findIndex((c) => c.id === id);
+      if (idx !== -1) list[idx] = { ...list[idx], ...updated };
+      localStorage.setItem('dns_clients', JSON.stringify(list));
+    } catch {}
     saveClientToFirestore(updated).catch((err) =>
       console.warn('Firestore client update sync note:', err)
     );
@@ -449,6 +621,13 @@ export const api = {
     const res = await fetchJson<{ success: boolean }>(`/api/clients/${id}`, {
       method: 'DELETE',
     });
+    try {
+      const raw = localStorage.getItem('dns_clients');
+      if (raw) {
+        const list: ClientItem[] = JSON.parse(raw);
+        localStorage.setItem('dns_clients', JSON.stringify(list.filter((c) => c.id !== id)));
+      }
+    } catch {}
     deleteClientFromFirestore(id).catch((err) =>
       console.warn('Firestore client delete sync note:', err)
     );
@@ -544,17 +723,31 @@ export const api = {
   // Settings
   async getSettings(): Promise<SiteSettings> {
     try {
-      return await fetchJson<SiteSettings>('/api/settings');
+      const data = await fetchJson<SiteSettings>('/api/settings');
+      try { localStorage.setItem('dns_site_settings', JSON.stringify(data)); } catch {}
+      return data;
     } catch {
+      try {
+        const raw = localStorage.getItem('dns_site_settings');
+        if (raw) return JSON.parse(raw);
+      } catch {}
       return initialSiteSettings;
     }
   },
 
   async updateSettings(data: Partial<SiteSettings>): Promise<SiteSettings> {
+    try {
+      const currentRaw = localStorage.getItem('dns_site_settings');
+      const current = currentRaw ? JSON.parse(currentRaw) : initialSiteSettings;
+      const merged = { ...current, ...data };
+      localStorage.setItem('dns_site_settings', JSON.stringify(merged));
+    } catch {}
+
     const updated = await fetchJson<SiteSettings>('/api/settings', {
       method: 'PUT',
       body: JSON.stringify(data),
     });
+    try { localStorage.setItem('dns_site_settings', JSON.stringify(updated)); } catch {}
     saveSettingsToFirestore(updated).catch((err) =>
       console.warn('Firestore settings update sync note:', err)
     );

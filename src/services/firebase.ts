@@ -152,39 +152,61 @@ export async function seedInitialDataIfEmpty(): Promise<void> {
     console.log('Seeding initial studio data into Firestore...');
     const batch = writeBatch(db);
 
+    let projectsToSeed = initialProjects;
+    let servicesToSeed = initialServices;
+    let clientsToSeed = initialClients;
+    let slidersToSeed = initialHeroSlides;
+    let insightsToSeed = initialEditorialInsights;
+    let settingsToSeed = initialSiteSettings;
+
+    try {
+      const localProj = localStorage.getItem('dns_projects');
+      if (localProj) projectsToSeed = JSON.parse(localProj);
+      const localSrv = localStorage.getItem('dns_services');
+      if (localSrv) servicesToSeed = JSON.parse(localSrv);
+      const localCli = localStorage.getItem('dns_clients');
+      if (localCli) clientsToSeed = JSON.parse(localCli);
+      const localSli = localStorage.getItem('dns_sliders');
+      if (localSli) slidersToSeed = JSON.parse(localSli);
+      const localIns = localStorage.getItem('dns_insights');
+      if (localIns) insightsToSeed = JSON.parse(localIns);
+      const localSet = localStorage.getItem('dns_site_settings');
+      if (localSet) settingsToSeed = JSON.parse(localSet);
+    } catch {}
+
     // Projects
-    initialProjects.forEach((p) => {
+    projectsToSeed.forEach((p) => {
       const ref = doc(db, 'projects', p.id);
       batch.set(ref, p);
     });
 
     // Services
-    initialServices.forEach((s) => {
+    servicesToSeed.forEach((s) => {
       const ref = doc(db, 'services', s.id);
       batch.set(ref, s);
     });
 
     // Editorial Insights
-    initialEditorialInsights.forEach((i) => {
+    insightsToSeed.forEach((i) => {
       const ref = doc(db, 'insights', i.id);
       batch.set(ref, i);
     });
 
     // Clients
-    initialClients.forEach((c) => {
+    clientsToSeed.forEach((c) => {
       const ref = doc(db, 'clients', c.id);
       batch.set(ref, c);
     });
 
     // Sliders
-    initialHeroSlides.forEach((s) => {
+    slidersToSeed.forEach((s) => {
       const ref = doc(db, 'sliders', s.id);
       batch.set(ref, s);
     });
 
     // Settings
     const settingsRef = doc(db, 'settings', 'site');
-    batch.set(settingsRef, initialSiteSettings);
+    batch.set(settingsRef, settingsToSeed);
 
     await batch.commit();
     console.log('Firestore initial data seed complete.');
