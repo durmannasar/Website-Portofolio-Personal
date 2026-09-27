@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import 'dotenv/config';
+import bcrypt from 'bcryptjs';
 import {
   Project,
   ServiceItem,
@@ -41,15 +42,28 @@ export interface DatabaseSchema {
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 const DB_FILE = path.resolve(DATA_DIR, 'db.json');
 
-// Simple secure hash function for password authentication
+// Secure password hashing with bcryptjs (10 salt rounds)
 export function hashPassword(plainText: string): string {
-  let hash = 0;
-  for (let i = 0; i < plainText.length; i++) {
-    const char = plainText.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash |= 0; // Convert to 32bit integer
+  return bcrypt.hashSync(plainText, 10);
+}
+
+export function comparePassword(plainText: string, hashed: string): boolean {
+  if (!hashed || !plainText) return false;
+  // Backward compatibility with legacy hashes if present
+  if (hashed.startsWith('hash_')) {
+    let legacy = 0;
+    for (let i = 0; i < plainText.length; i++) {
+      const char = plainText.charCodeAt(i);
+      legacy = (legacy << 5) - legacy + char;
+      legacy |= 0;
+    }
+    return hashed === `hash_${Math.abs(legacy)}_${plainText.length}`;
   }
-  return `hash_${Math.abs(hash)}_${plainText.length}`;
+  try {
+    return bcrypt.compareSync(plainText, hashed);
+  } catch {
+    return false;
+  }
 }
 
 export class JsonDatabase {
@@ -542,21 +556,19 @@ export class JsonDatabase {
       return false;
     }
 
-    const inputHash = hashPassword(plainTextPassword);
-
-    // Verify against environment variable password if provided
+    // Verify against environment variable password if provided (either raw or bcrypt hash)
     if (process.env.ADMIN_PASSWORD) {
-      if (
-        plainTextPassword === process.env.ADMIN_PASSWORD ||
-        inputHash === hashPassword(process.env.ADMIN_PASSWORD)
-      ) {
+      const envPassword = process.env.ADMIN_PASSWORD;
+      if (envPassword.startsWith('$2a$') || envPassword.startsWith('$2b$')) {
+        if (comparePassword(plainTextPassword, envPassword)) return true;
+      } else if (plainTextPassword === envPassword) {
         return true;
       }
     }
 
     // Otherwise verify against stored hash in database
     if (this.data.admin?.passwordHash) {
-      return this.data.admin.passwordHash === inputHash;
+      return comparePassword(plainTextPassword, this.data.admin.passwordHash);
     }
 
     return false;

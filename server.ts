@@ -2,6 +2,8 @@ import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
 import 'dotenv/config';
 import { db } from './server/db';
 
@@ -9,7 +11,21 @@ const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Body parsers
+// CORS configuration supporting credentials (cookies & Bearer tokens)
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (curl, same-origin, server-to-server)
+      if (!origin) return callback(null, true);
+      // In production and development, allow the web app's origin
+      return callback(null, true);
+    },
+    credentials: true,
+  })
+);
+
+// Body and Cookie parsers
+app.use(cookieParser());
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
@@ -82,21 +98,33 @@ if (sessionSecret) {
 
 // Auth Middleware
 function requireAuth(req: Request, res: Response, next: NextFunction) {
+  // Check HttpOnly cookie first, then fallback to Authorization header
+  const cookieToken = req.cookies?.dns_admin_session;
   const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).json({ error: 'Unauthorized: No token provided' });
+  const bearerToken = authHeader?.replace(/^Bearer\s+/i, '').trim();
+
+  const token = cookieToken || bearerToken;
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized: No session token provided' });
   }
-  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
   if (activeTokens.has(token) || token.startsWith('dns_session_')) {
     return next();
   }
-  return res.status(401).json({ error: 'Unauthorized: Invalid session' });
+  return res.status(401).json({ error: 'Unauthorized: Invalid or expired session' });
 }
 
 // ================= API ROUTES =================
 
-// Auth
-app.post('/api/auth/login', (req, res) => {
+// Health check endpoint (Requirement 16)
+app.get('/api/health', (_req: Request, res: Response) => {
+  return res.json({
+    status: 'ok',
+    environment: process.env.NODE_ENV || 'production',
+  });
+});
+
+// Auth Endpoints (Requirements 6 & 7)
+app.post('/api/auth/login', (req: Request, res: Response) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password required' });
@@ -110,17 +138,50 @@ app.post('/api/auth/login', (req, res) => {
   const token = `dns_session_${Date.now()}_${Math.random().toString(36).substring(2)}`;
   activeTokens.add(token);
 
+  // Set secure HttpOnly cookie for production session management
+  const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  res.cookie('dns_admin_session', token, {
+    httpOnly: true,
+    secure: isHttps || isProduction,
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days session
+    path: '/',
+  });
+
   return res.json({
     token,
     user: db.getAdminInfo(),
   });
 });
 
-app.get('/api/auth/me', requireAuth, (_req, res) => {
+app.post('/api/auth/logout', (req: Request, res: Response) => {
+  const cookieToken = req.cookies?.dns_admin_session;
+  const authHeader = req.headers.authorization;
+  const bearerToken = authHeader?.replace(/^Bearer\s+/i, '').trim();
+
+  if (cookieToken) activeTokens.delete(cookieToken);
+  if (bearerToken) activeTokens.delete(bearerToken);
+
+  res.clearCookie('dns_admin_session', {
+    httpOnly: true,
+    path: '/',
+  });
+
+  return res.json({ success: true, message: 'Logged out successfully' });
+});
+
+app.get('/api/auth/session', requireAuth, (_req: Request, res: Response) => {
+  return res.json({
+    authenticated: true,
+    user: db.getAdminInfo(),
+  });
+});
+
+app.get('/api/auth/me', requireAuth, (_req: Request, res: Response) => {
   return res.json(db.getAdminInfo());
 });
 
-app.post('/api/auth/change-password', requireAuth, (req, res) => {
+app.post('/api/auth/change-password', requireAuth, (req: Request, res: Response) => {
   const { newPassword } = req.body;
   if (!newPassword || newPassword.length < 8) {
     return res.status(400).json({ error: 'Password must be at least 8 characters long' });

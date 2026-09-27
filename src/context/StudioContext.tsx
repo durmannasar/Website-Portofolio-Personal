@@ -475,25 +475,31 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     });
 
-    const token = getAuthToken();
-    if (token) {
-      api
-        .getMe()
-        .then((user) => {
+    // Verify production session (HttpOnly cookie or Bearer token)
+    api
+      .getSession()
+      .then((session) => {
+        if (session.authenticated && session.user) {
           setIsAdmin(true);
-          setAdminUser({
-            id: 'admin-1',
-            email: user.email,
-            name: user.name,
-            role: 'admin',
-          });
-        })
-        .catch(() => {
-          clearAuthToken();
-          setIsAdmin(false);
-          setAdminUser(null);
-        });
-    }
+          setAdminUser(session.user);
+        }
+      })
+      .catch(() => {
+        const token = getAuthToken();
+        if (token) {
+          api
+            .getMe()
+            .then((user) => {
+              setIsAdmin(true);
+              setAdminUser(user);
+            })
+            .catch(() => {
+              clearAuthToken();
+              setIsAdmin(false);
+              setAdminUser(null);
+            });
+        }
+      });
 
     return () => {
       unsubAuth();

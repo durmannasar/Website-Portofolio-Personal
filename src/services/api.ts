@@ -52,15 +52,17 @@ export const clearAuthToken = () => {
   sessionStorage.removeItem(TOKEN_KEY);
 };
 
-// Hash function matching backend verification
-export function hashPassword(plainText: string): string {
-  let hash = 0;
-  for (let i = 0; i < plainText.length; i++) {
-    const char = plainText.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash |= 0;
+// Production API Base URL Configuration (Requirement 4):
+// - If VITE_API_URL is configured (e.g. https://api.durmannasarstudio.com), use it.
+// - If empty, defaults to same-origin relative path '/api/...'
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+
+export function buildApiUrl(path: string): string {
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
   }
-  return `hash_${Math.abs(hash)}_${plainText.length}`;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${API_BASE_URL}${cleanPath}`;
 }
 
 async function fetchJson<T>(url: string, options: RequestInit = {}): Promise<T> {
@@ -77,24 +79,36 @@ async function fetchJson<T>(url: string, options: RequestInit = {}): Promise<T> 
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  // Prepend API_BASE_URL if relative path
+  let fullUrl = buildApiUrl(url);
+
   // Append timestamp cache-buster for GET requests to guarantee zero stale cache
-  let targetUrl = url;
   const method = options.method?.toUpperCase() || 'GET';
   if (method === 'GET') {
-    const separator = targetUrl.includes('?') ? '&' : '?';
-    targetUrl = `${targetUrl}${separator}_t=${Date.now()}`;
+    const separator = fullUrl.includes('?') ? '&' : '?';
+    fullUrl = `${fullUrl}${separator}_t=${Date.now()}`;
   }
 
-  const res = await fetch(targetUrl, {
-    ...options,
-    headers,
-    cache: 'no-store',
-  });
+  let res: Response;
+  try {
+    res = await fetch(fullUrl, {
+      ...options,
+      headers,
+      cache: 'no-store',
+      credentials: 'include', // Sends HttpOnly session cookies in same-origin and cross-origin CORS
+    });
+  } catch (networkErr: any) {
+    throw new Error(
+      `Production API is unreachable (${networkErr.message || 'Network error'}). Check backend deployment and VITE_API_URL.`
+    );
+  }
 
-  // Guard against static web hosts (Hostinger/Apache) returning index.html for 404 API calls
+  // Guard against static web hosts (Hostinger/Apache/LiteSpeed) returning index.html for unrouted 404 API calls
   const contentType = res.headers.get('content-type') || '';
   if (contentType.includes('text/html')) {
-    throw new Error('STATIC_HOST_NO_API');
+    throw new Error(
+      'Production API is unreachable. Check backend deployment and VITE_API_URL.'
+    );
   }
 
   if (!res.ok) {
@@ -106,7 +120,12 @@ async function fetchJson<T>(url: string, options: RequestInit = {}): Promise<T> 
 }
 
 export const api = {
-  // Auth
+  // Production Health Check (Requirement 16)
+  async checkHealth(): Promise<{ status: string; environment: string }> {
+    return await fetchJson<{ status: string; environment: string }>('/api/health');
+  },
+
+  // Auth (Requirements 5, 6, 7)
   async login(email: string, password: string) {
     const res = await fetchJson<{ token: string; user: AdminUser }>('/api/auth/login', {
       method: 'POST',
@@ -117,6 +136,10 @@ export const api = {
       localStorage.setItem('dns_client_user', JSON.stringify(res.user));
     } catch {}
     return res;
+  },
+
+  async getSession(): Promise<{ authenticated: boolean; user: AdminUser }> {
+    return await fetchJson<{ authenticated: boolean; user: AdminUser }>('/api/auth/session');
   },
 
   async getMe(): Promise<AdminUser> {
@@ -142,11 +165,14 @@ export const api = {
     });
   },
 
-  logout() {
+  async logout() {
     clearAuthToken();
     try {
       localStorage.removeItem('dns_client_user');
-    } catch {}
+      await fetchJson<{ success: boolean }>('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // ignore
+    }
   },
 
   // Projects
@@ -559,10 +585,11 @@ export const api = {
     const headers: Record<string, string> = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch('/api/media/upload', {
+    const res = await fetch(buildApiUrl('/api/media/upload'), {
       method: 'POST',
       headers,
       body: formData,
+      credentials: 'include',
     });
 
     if (!res.ok) {
@@ -669,10 +696,11 @@ export const api = {
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     try {
-      const res = await fetch('/api/settings/favicon-upload', {
+      const res = await fetch(buildApiUrl('/api/settings/favicon-upload'), {
         method: 'POST',
         headers,
         body: formData,
+        credentials: 'include',
       });
 
       if (res.ok) {
