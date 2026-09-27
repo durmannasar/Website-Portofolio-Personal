@@ -219,7 +219,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           <div className="h-4 w-px bg-white/10 hidden md:block" />
           <div className="hidden md:flex items-center gap-2 text-xs font-mono text-neutral-400">
             <Shield className="w-3.5 h-3.5 text-[#E2B714]" />
-            <span className="max-w-[130px] truncate">{adminUser?.email || 'drmn@durmannasarstudio.com'}</span>
+            <span className="max-w-[130px] truncate">{adminUser?.email || adminUser?.name || 'Administrator'}</span>
           </div>
 
           {/* Sign Out Button in Header (Optimized for Mobile Touch) */}
@@ -346,7 +346,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           <div className="pt-3 mt-3 border-t border-white/10 space-y-2 shrink-0">
             <div className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-mono text-neutral-400 bg-white/[0.02] border border-white/5 truncate">
               <Shield className="w-3.5 h-3.5 text-[#E2B714] shrink-0" />
-              <span className="truncate">{adminUser?.email || 'drmn@durmannasarstudio.com'}</span>
+              <span className="truncate">{adminUser?.email || adminUser?.name || 'Administrator'}</span>
             </div>
 
             <button

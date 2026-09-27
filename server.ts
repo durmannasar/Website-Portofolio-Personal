@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
+import 'dotenv/config';
 import { db } from './server/db';
 
 const app = express();
@@ -74,8 +75,10 @@ const upload = multer({
 
 // Simple secure session token store
 const activeTokens = new Set<string>();
-const ADMIN_TOKEN_KEY = 'dns_token_master_admin_session';
-activeTokens.add(ADMIN_TOKEN_KEY);
+const sessionSecret = process.env.ADMIN_SESSION_SECRET;
+if (sessionSecret) {
+  activeTokens.add(sessionSecret);
+}
 
 // Auth Middleware
 function requireAuth(req: Request, res: Response, next: NextFunction) {
@@ -109,20 +112,12 @@ app.post('/api/auth/login', (req, res) => {
 
   return res.json({
     token,
-    user: {
-      email: 'drmn@durmannasarstudio.com',
-      name: 'Durman Nasar',
-      role: 'admin',
-    },
+    user: db.getAdminInfo(),
   });
 });
 
 app.get('/api/auth/me', requireAuth, (_req, res) => {
-  return res.json({
-    email: 'drmn@durmannasarstudio.com',
-    name: 'Durman Nasar',
-    role: 'admin',
-  });
+  return res.json(db.getAdminInfo());
 });
 
 app.post('/api/auth/change-password', requireAuth, (req, res) => {
@@ -132,68 +127,6 @@ app.post('/api/auth/change-password', requireAuth, (req, res) => {
   }
   db.updateAdminPassword(newPassword);
   return res.json({ success: true, message: 'Password updated successfully' });
-});
-
-// Forgot Password Request
-app.post('/api/auth/forgot-password', (req, res) => {
-  const { email } = req.body;
-  if (!email) {
-    return res.status(400).json({ error: 'Email administrator diperlukan' });
-  }
-
-  const normalized = email.trim().toLowerCase();
-  const allowedEmails = [
-    'drmn@durmannasarstudio.com',
-    'admin@durmannasarstudio.com',
-    'durman.nasar@gmail.com',
-  ];
-
-  if (!allowedEmails.includes(normalized)) {
-    return res.status(404).json({ error: 'Email administrator tidak terdaftar dalam sistem.' });
-  }
-
-  // Generate a predictable or secure 6-digit administrator verification code
-  const securityCode = '843934'; // Based on studio phone identifier +62 856 8439 341
-  const recoveryEmail = 'durman.nasar@gmail.com';
-
-  return res.json({
-    success: true,
-    message: 'Identitas administrator terverifikasi.',
-    securityCode,
-    primaryEmail: 'drmn@durmannasarstudio.com',
-    recoveryEmail,
-    instructions:
-      'Jika email tidak masuk ke inbox, hal ini biasanya karena MX record domain belum aktif atau masuk ke folder Spam/Junk. Anda dapat langsung menggunakan opsi reset langsung atau kode PIN verifikasi di layar.',
-  });
-});
-
-// Reset Password with Verified Email
-app.post('/api/auth/reset-password', (req, res) => {
-  const { email, newPassword } = req.body;
-  if (!email || !newPassword) {
-    return res.status(400).json({ error: 'Email dan kata sandi baru diperlukan' });
-  }
-
-  const normalized = email.trim().toLowerCase();
-  const allowedEmails = [
-    'drmn@durmannasarstudio.com',
-    'admin@durmannasarstudio.com',
-    'durman.nasar@gmail.com',
-  ];
-
-  if (!allowedEmails.includes(normalized)) {
-    return res.status(403).json({ error: 'Tidak diizinkan mengubah kata sandi untuk email ini.' });
-  }
-
-  if (newPassword.length < 8) {
-    return res.status(400).json({ error: 'Kata sandi baru harus minimal 8 karakter' });
-  }
-
-  db.updateAdminPassword(newPassword);
-  return res.json({
-    success: true,
-    message: 'Kata sandi berhasil diperbarui! Silakan masuk menggunakan kata sandi baru Anda.',
-  });
 });
 
 // Projects

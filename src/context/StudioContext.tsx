@@ -466,8 +466,8 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setIsAdmin(true);
         setAdminUser({
           id: fbUser.uid,
-          email: fbUser.email || 'drmn@durmannasarstudio.com',
-          name: fbUser.displayName || fbUser.email?.split('@')[0] || 'Studio Director',
+          email: fbUser.email || '',
+          name: fbUser.displayName || fbUser.email?.split('@')[0] || 'Administrator',
           role: 'admin',
         });
         // Force immediate fresh data fetch on Firebase auth change
@@ -527,8 +527,8 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const fbUser = await signInWithGooglePopup();
       const user: AdminUser = {
         id: fbUser.uid,
-        email: fbUser.email || 'durman.nasar@gmail.com',
-        name: fbUser.displayName || 'Durman Nasar',
+        email: fbUser.email || '',
+        name: fbUser.displayName || fbUser.email?.split('@')[0] || 'Administrator',
         role: 'admin',
       };
       const token = `dns_session_${fbUser.uid}_${Date.now()}`;

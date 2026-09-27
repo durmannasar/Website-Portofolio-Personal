@@ -1,8 +1,8 @@
 {
   "admin": {
-    "email": "drmn@durmannasarstudio.com",
-    "passwordHash": "hash_104709932_20",
-    "name": "Durman Nasar"
+    "email": "",
+    "passwordHash": "",
+    "name": "Studio Administrator"
   },
   "settings": {
     "studioName": "Durman Nasar Studio",

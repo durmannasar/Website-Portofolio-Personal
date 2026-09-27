@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import 'dotenv/config';
 import {
   Project,
   ServiceItem,
@@ -112,12 +113,15 @@ export class JsonDatabase {
       console.error('Error reading db.json, re-initializing', e);
     }
 
+    const envAdminEmail = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+    const envAdminPassword = process.env.ADMIN_PASSWORD || '';
+    const envAdminName = process.env.ADMIN_NAME || 'Studio Administrator';
+
     const defaultDb: DatabaseSchema = {
       admin: {
-        email: 'drmn@durmannasarstudio.com',
-        // Default password: "studio_director_2026"
-        passwordHash: hashPassword('studio_director_2026'),
-        name: 'Durman Nasar',
+        email: envAdminEmail,
+        passwordHash: envAdminPassword ? hashPassword(envAdminPassword) : '',
+        name: envAdminName,
       },
       settings: initialSiteSettings,
       projects: initialProjects,
@@ -526,14 +530,45 @@ export class JsonDatabase {
 
   // Admin Auth
   public verifyAdmin(email: string, plainTextPassword: string): boolean {
+    if (!email || !plainTextPassword) return false;
     const normalizedEmail = email.trim().toLowerCase();
-    const adminEmail = this.data.admin.email.trim().toLowerCase();
-    const isMatch =
-      normalizedEmail === adminEmail ||
-      normalizedEmail === 'admin@durmannasarstudio.com' ||
-      normalizedEmail === 'durman.nasar@gmail.com';
-    if (!isMatch) return false;
-    return this.data.admin.passwordHash === hashPassword(plainTextPassword);
+
+    const envEmail = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+    const storedEmail = (this.data.admin?.email || '').trim().toLowerCase();
+
+    // Check if matching configured email from environment or storage
+    const validEmail = envEmail || storedEmail;
+    if (!validEmail || normalizedEmail !== validEmail) {
+      return false;
+    }
+
+    const inputHash = hashPassword(plainTextPassword);
+
+    // Verify against environment variable password if provided
+    if (process.env.ADMIN_PASSWORD) {
+      if (
+        plainTextPassword === process.env.ADMIN_PASSWORD ||
+        inputHash === hashPassword(process.env.ADMIN_PASSWORD)
+      ) {
+        return true;
+      }
+    }
+
+    // Otherwise verify against stored hash in database
+    if (this.data.admin?.passwordHash) {
+      return this.data.admin.passwordHash === inputHash;
+    }
+
+    return false;
+  }
+
+  public getAdminInfo() {
+    return {
+      id: 'admin_master',
+      email: (process.env.ADMIN_EMAIL || this.data.admin?.email || '').trim().toLowerCase(),
+      name: process.env.ADMIN_NAME || this.data.admin?.name || 'Studio Administrator',
+      role: 'admin' as const,
+    };
   }
 
   public updateAdminPassword(newPassword: string): boolean {
