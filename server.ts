@@ -8,7 +8,7 @@ import 'dotenv/config';
 import { db } from './server/db';
 
 const app = express();
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
 // CORS configuration supporting credentials (cookies & Bearer tokens)
@@ -91,7 +91,7 @@ const upload = multer({
 
 // Simple secure session token store
 const activeTokens = new Set<string>();
-const sessionSecret = process.env.ADMIN_SESSION_SECRET;
+const sessionSecret = process.env.SESSION_SECRET || process.env.ADMIN_SESSION_SECRET;
 if (sessionSecret) {
   activeTokens.add(sessionSecret);
 }
@@ -627,6 +627,11 @@ app.get('/api/stats', requireAuth, (_req, res) => {
   });
 });
 
+// 404 handler for unknown API routes (MUST return JSON, NEVER index.html)
+app.all('/api/*', (_req: Request, res: Response) => {
+  return res.status(404).json({ error: 'API route not found' });
+});
+
 // Mount Vite or Static Frontend
 async function startServer() {
   if (!isProduction) {
@@ -638,9 +643,19 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.resolve(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (_req, res) => {
-      res.sendFile(path.resolve(distPath, 'index.html'));
+    // Serve static files from dist directory
+    app.use(express.static(distPath, { maxAge: '1d', index: false }));
+
+    // SPA fallback: return index.html for all client-side page routes
+    app.get('*', (req: Request, res: Response) => {
+      if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'API route not found' });
+      }
+      const indexPath = path.resolve(distPath, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        return res.sendFile(indexPath);
+      }
+      return res.status(404).send('Application build not found. Run npm run build first.');
     });
   }
 

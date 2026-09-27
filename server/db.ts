@@ -129,12 +129,14 @@ export class JsonDatabase {
 
     const envAdminEmail = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
     const envAdminPassword = process.env.ADMIN_PASSWORD || '';
+    const envAdminPasswordHash =
+      process.env.ADMIN_PASSWORD_HASH || (envAdminPassword ? hashPassword(envAdminPassword) : '');
     const envAdminName = process.env.ADMIN_NAME || 'Studio Administrator';
 
     const defaultDb: DatabaseSchema = {
       admin: {
         email: envAdminEmail,
-        passwordHash: envAdminPassword ? hashPassword(envAdminPassword) : '',
+        passwordHash: envAdminPasswordHash,
         name: envAdminName,
       },
       settings: initialSiteSettings,
@@ -554,6 +556,14 @@ export class JsonDatabase {
     const validEmail = envEmail || storedEmail;
     if (!validEmail || normalizedEmail !== validEmail) {
       return false;
+    }
+
+    // Verify against ADMIN_PASSWORD_HASH environment variable if provided
+    const envPasswordHash = process.env.ADMIN_PASSWORD_HASH;
+    if (envPasswordHash) {
+      if (comparePassword(plainTextPassword, envPasswordHash)) {
+        return true;
+      }
     }
 
     // Verify against environment variable password if provided (either raw or bcrypt hash)
