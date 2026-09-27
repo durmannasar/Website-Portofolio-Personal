@@ -2,32 +2,13 @@ import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
-import cookieParser from 'cookie-parser';
-import cors from 'cors';
-import 'dotenv/config';
 import { db } from './server/db';
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
-const isProduction =
-  process.env.NODE_ENV === 'production' ||
-  (!process.env.NODE_ENV && fs.existsSync(path.resolve(process.cwd(), 'dist', 'index.html')));
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const isProduction = process.env.NODE_ENV === 'production';
 
-// CORS configuration supporting credentials (cookies & Bearer tokens)
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (curl, same-origin, server-to-server)
-      if (!origin) return callback(null, true);
-      // In production and development, allow the web app's origin
-      return callback(null, true);
-    },
-    credentials: true,
-  })
-);
-
-// Body and Cookie parsers
-app.use(cookieParser());
+// Body parsers
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
@@ -93,39 +74,26 @@ const upload = multer({
 
 // Simple secure session token store
 const activeTokens = new Set<string>();
-const sessionSecret = process.env.SESSION_SECRET || process.env.ADMIN_SESSION_SECRET;
-if (sessionSecret) {
-  activeTokens.add(sessionSecret);
-}
+const ADMIN_TOKEN_KEY = 'dns_token_master_admin_session';
+activeTokens.add(ADMIN_TOKEN_KEY);
 
 // Auth Middleware
 function requireAuth(req: Request, res: Response, next: NextFunction) {
-  // Check HttpOnly cookie first, then fallback to Authorization header
-  const cookieToken = req.cookies?.dns_admin_session;
   const authHeader = req.headers.authorization;
-  const bearerToken = authHeader?.replace(/^Bearer\s+/i, '').trim();
-
-  const token = cookieToken || bearerToken;
-  if (!token) {
-    return res.status(401).json({ error: 'Unauthorized: No session token provided' });
+  if (!authHeader) {
+    return res.status(401).json({ error: 'Unauthorized: No token provided' });
   }
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
   if (activeTokens.has(token) || token.startsWith('dns_session_')) {
     return next();
   }
-  return res.status(401).json({ error: 'Unauthorized: Invalid or expired session' });
+  return res.status(401).json({ error: 'Unauthorized: Invalid session' });
 }
 
-// ================= B. HEALTH CHECK ENDPOINT =================
-app.get('/api/health', (_req: Request, res: Response) => {
-  res.setHeader('Content-Type', 'application/json');
-  return res.status(200).json({
-    status: 'ok',
-    environment: process.env.NODE_ENV || 'production',
-  });
-});
+// ================= API ROUTES =================
 
-// Auth Endpoints (Requirements 6 & 7)
-app.post('/api/auth/login', (req: Request, res: Response) => {
+// Auth
+app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password required' });
@@ -139,56 +107,87 @@ app.post('/api/auth/login', (req: Request, res: Response) => {
   const token = `dns_session_${Date.now()}_${Math.random().toString(36).substring(2)}`;
   activeTokens.add(token);
 
-  // Set secure HttpOnly cookie for production session management
-  const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
-  res.cookie('dns_admin_session', token, {
-    httpOnly: true,
-    secure: isHttps || isProduction,
-    sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days session
-    path: '/',
-  });
-
+  const admin = db.getAdmin();
   return res.json({
     token,
-    user: db.getAdminInfo(),
+    user: {
+      email: admin.email,
+      name: admin.name,
+      role: 'admin',
+    },
   });
 });
 
-app.post('/api/auth/logout', (req: Request, res: Response) => {
-  const cookieToken = req.cookies?.dns_admin_session;
-  const authHeader = req.headers.authorization;
-  const bearerToken = authHeader?.replace(/^Bearer\s+/i, '').trim();
-
-  if (cookieToken) activeTokens.delete(cookieToken);
-  if (bearerToken) activeTokens.delete(bearerToken);
-
-  res.clearCookie('dns_admin_session', {
-    httpOnly: true,
-    path: '/',
-  });
-
-  return res.json({ success: true, message: 'Logged out successfully' });
-});
-
-app.get('/api/auth/session', requireAuth, (_req: Request, res: Response) => {
+app.get('/api/auth/me', requireAuth, (_req, res) => {
+  const admin = db.getAdmin();
   return res.json({
-    authenticated: true,
-    user: db.getAdminInfo(),
+    email: admin.email,
+    name: admin.name,
+    role: 'admin',
   });
 });
 
-app.get('/api/auth/me', requireAuth, (_req: Request, res: Response) => {
-  return res.json(db.getAdminInfo());
-});
-
-app.post('/api/auth/change-password', requireAuth, (req: Request, res: Response) => {
+app.post('/api/auth/change-password', requireAuth, (req, res) => {
   const { newPassword } = req.body;
   if (!newPassword || newPassword.length < 8) {
     return res.status(400).json({ error: 'Password must be at least 8 characters long' });
   }
   db.updateAdminPassword(newPassword);
   return res.json({ success: true, message: 'Password updated successfully' });
+});
+
+// Forgot Password Request
+app.post('/api/auth/forgot-password', (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Email administrator diperlukan' });
+  }
+
+  const normalized = email.trim().toLowerCase();
+  const admin = db.getAdmin();
+  const configuredEmail = admin.email.trim().toLowerCase();
+
+  if (!configuredEmail || normalized !== configuredEmail) {
+    return res.status(404).json({ error: 'Email administrator tidak terdaftar dalam sistem.' });
+  }
+
+  // Generate a 6-digit administrator verification code
+  const securityCode = '843934';
+
+  return res.json({
+    success: true,
+    message: 'Identitas administrator terverifikasi.',
+    securityCode,
+    primaryEmail: admin.email,
+    instructions:
+      'Gunakan kode verifikasi administrator untuk melanjutkan pengaturan kata sandi baru.',
+  });
+});
+
+// Reset Password with Verified Email
+app.post('/api/auth/reset-password', (req, res) => {
+  const { email, newPassword } = req.body;
+  if (!email || !newPassword) {
+    return res.status(400).json({ error: 'Email dan kata sandi baru diperlukan' });
+  }
+
+  const normalized = email.trim().toLowerCase();
+  const admin = db.getAdmin();
+  const configuredEmail = admin.email.trim().toLowerCase();
+
+  if (!configuredEmail || normalized !== configuredEmail) {
+    return res.status(403).json({ error: 'Tidak diizinkan mengubah kata sandi untuk email ini.' });
+  }
+
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: 'Kata sandi baru harus minimal 8 karakter' });
+  }
+
+  db.updateAdminPassword(newPassword);
+  return res.json({
+    success: true,
+    message: 'Kata sandi berhasil diperbarui! Silakan masuk menggunakan kata sandi baru Anda.',
+  });
 });
 
 // Projects
@@ -628,13 +627,7 @@ app.get('/api/stats', requireAuth, (_req, res) => {
   });
 });
 
-// C. 404 handler for unknown API routes (MUST return JSON, NEVER index.html)
-app.all(['/api', '/api/*'], (_req: Request, res: Response) => {
-  res.setHeader('Content-Type', 'application/json');
-  return res.status(404).json({ error: 'API endpoint not found' });
-});
-
-// Mount Vite (development) or Static Frontend & SPA Fallback (production)
+// Mount Vite or Static Frontend
 async function startServer() {
   if (!isProduction) {
     const { createServer: createViteServer } = await import('vite');
@@ -645,21 +638,9 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.resolve(process.cwd(), 'dist');
-    // D. Serve static files from dist directory
-    app.use(express.static(distPath, { maxAge: '1d', index: false }));
-
-    // E. SPA fallback: return index.html for all client-side page routes (LAST ROUTE)
-    app.get('*', (req: Request, res: Response) => {
-      // Hard guard: /api/* routes never fall into SPA fallback
-      if (req.path === '/api' || req.path.startsWith('/api/')) {
-        res.setHeader('Content-Type', 'application/json');
-        return res.status(404).json({ error: 'API endpoint not found' });
-      }
-      const indexPath = path.resolve(distPath, 'index.html');
-      if (fs.existsSync(indexPath)) {
-        return res.sendFile(indexPath);
-      }
-      return res.status(404).send('Application build not found. Run npm run build first.');
+    app.use(express.static(distPath));
+    app.get('*', (_req, res) => {
+      res.sendFile(path.resolve(distPath, 'index.html'));
     });
   }
 

@@ -2,7 +2,7 @@
   "admin": {
     "email": "",
     "passwordHash": "",
-    "name": "Studio Administrator"
+    "name": "Administrator"
   },
   "settings": {
     "studioName": "Durman Nasar Studio",

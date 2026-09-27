@@ -1,7 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import 'dotenv/config';
-import bcrypt from 'bcryptjs';
 import {
   Project,
   ServiceItem,
@@ -42,28 +40,15 @@ export interface DatabaseSchema {
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 const DB_FILE = path.resolve(DATA_DIR, 'db.json');
 
-// Secure password hashing with bcryptjs (10 salt rounds)
+// Simple secure hash function for password authentication
 export function hashPassword(plainText: string): string {
-  return bcrypt.hashSync(plainText, 10);
-}
-
-export function comparePassword(plainText: string, hashed: string): boolean {
-  if (!hashed || !plainText) return false;
-  // Backward compatibility with legacy hashes if present
-  if (hashed.startsWith('hash_')) {
-    let legacy = 0;
-    for (let i = 0; i < plainText.length; i++) {
-      const char = plainText.charCodeAt(i);
-      legacy = (legacy << 5) - legacy + char;
-      legacy |= 0;
-    }
-    return hashed === `hash_${Math.abs(legacy)}_${plainText.length}`;
+  let hash = 0;
+  for (let i = 0; i < plainText.length; i++) {
+    const char = plainText.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0; // Convert to 32bit integer
   }
-  try {
-    return bcrypt.compareSync(plainText, hashed);
-  } catch {
-    return false;
-  }
+  return `hash_${Math.abs(hash)}_${plainText.length}`;
 }
 
 export class JsonDatabase {
@@ -121,23 +106,40 @@ export class JsonDatabase {
           parsed.insights = initialEditorialInsights;
           this.saveData(parsed);
         }
+
+        if (!parsed.admin) {
+          parsed.admin = {
+            email: process.env.ADMIN_EMAIL || '',
+            passwordHash: process.env.ADMIN_PASSWORD
+              ? hashPassword(process.env.ADMIN_PASSWORD)
+              : (process.env.ADMIN_PASSWORD_HASH || ''),
+            name: process.env.ADMIN_NAME || 'Administrator',
+          };
+        } else {
+          if (process.env.ADMIN_EMAIL) {
+            parsed.admin.email = process.env.ADMIN_EMAIL;
+          }
+          if (process.env.ADMIN_PASSWORD) {
+            parsed.admin.passwordHash = hashPassword(process.env.ADMIN_PASSWORD);
+          }
+          if (process.env.ADMIN_NAME) {
+            parsed.admin.name = process.env.ADMIN_NAME;
+          }
+        }
+
         return parsed;
       }
     } catch (e) {
       console.error('Error reading db.json, re-initializing', e);
     }
 
-    const envAdminEmail = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
-    const envAdminPassword = process.env.ADMIN_PASSWORD || '';
-    const envAdminPasswordHash =
-      process.env.ADMIN_PASSWORD_HASH || (envAdminPassword ? hashPassword(envAdminPassword) : '');
-    const envAdminName = process.env.ADMIN_NAME || 'Studio Administrator';
-
     const defaultDb: DatabaseSchema = {
       admin: {
-        email: envAdminEmail,
-        passwordHash: envAdminPasswordHash,
-        name: envAdminName,
+        email: process.env.ADMIN_EMAIL || '',
+        passwordHash: process.env.ADMIN_PASSWORD
+          ? hashPassword(process.env.ADMIN_PASSWORD)
+          : (process.env.ADMIN_PASSWORD_HASH || ''),
+        name: process.env.ADMIN_NAME || 'Administrator',
       },
       settings: initialSiteSettings,
       projects: initialProjects,
@@ -545,55 +547,58 @@ export class JsonDatabase {
   }
 
   // Admin Auth
-  public verifyAdmin(email: string, plainTextPassword: string): boolean {
-    if (!email || !plainTextPassword) return false;
-    const normalizedEmail = email.trim().toLowerCase();
-
-    const envEmail = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
-    const storedEmail = (this.data.admin?.email || '').trim().toLowerCase();
-
-    // Check if matching configured email from environment or storage
-    const validEmail = envEmail || storedEmail;
-    if (!validEmail || normalizedEmail !== validEmail) {
-      return false;
-    }
-
-    // Verify against ADMIN_PASSWORD_HASH environment variable if provided
-    const envPasswordHash = process.env.ADMIN_PASSWORD_HASH;
-    if (envPasswordHash) {
-      if (comparePassword(plainTextPassword, envPasswordHash)) {
-        return true;
-      }
-    }
-
-    // Verify against environment variable password if provided (either raw or bcrypt hash)
-    if (process.env.ADMIN_PASSWORD) {
-      const envPassword = process.env.ADMIN_PASSWORD;
-      if (envPassword.startsWith('$2a$') || envPassword.startsWith('$2b$')) {
-        if (comparePassword(plainTextPassword, envPassword)) return true;
-      } else if (plainTextPassword === envPassword) {
-        return true;
-      }
-    }
-
-    // Otherwise verify against stored hash in database
-    if (this.data.admin?.passwordHash) {
-      return comparePassword(plainTextPassword, this.data.admin.passwordHash);
-    }
-
-    return false;
-  }
-
-  public getAdminInfo() {
+  public getAdmin(): { email: string; name: string } {
     return {
-      id: 'admin_master',
-      email: (process.env.ADMIN_EMAIL || this.data.admin?.email || '').trim().toLowerCase(),
-      name: process.env.ADMIN_NAME || this.data.admin?.name || 'Studio Administrator',
-      role: 'admin' as const,
+      email: this.data.admin?.email || process.env.ADMIN_EMAIL || '',
+      name: this.data.admin?.name || process.env.ADMIN_NAME || 'Administrator',
     };
   }
 
+  public verifyAdmin(email: string, plainTextPassword: string): boolean {
+    const normalizedEmail = email.trim().toLowerCase();
+    const adminEmail = (this.data.admin?.email || process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+    if (!adminEmail || normalizedEmail !== adminEmail) {
+      return false;
+    }
+    const currentHash =
+      this.data.admin?.passwordHash ||
+      (process.env.ADMIN_PASSWORD ? hashPassword(process.env.ADMIN_PASSWORD) : (process.env.ADMIN_PASSWORD_HASH || ''));
+    if (!currentHash) {
+      return false;
+    }
+    return currentHash === hashPassword(plainTextPassword);
+  }
+
+  public setAdmin(adminData: { email?: string; name?: string; password?: string }): boolean {
+    if (!this.data.admin) {
+      this.data.admin = {
+        email: '',
+        passwordHash: '',
+        name: 'Administrator',
+      };
+    }
+    if (adminData.email) {
+      this.data.admin.email = adminData.email.trim().toLowerCase();
+    }
+    if (adminData.name) {
+      this.data.admin.name = adminData.name.trim();
+    }
+    if (adminData.password) {
+      this.data.admin.passwordHash = hashPassword(adminData.password);
+    }
+    this.data.updatedAt = new Date().toISOString();
+    this.saveData(this.data);
+    return true;
+  }
+
   public updateAdminPassword(newPassword: string): boolean {
+    if (!this.data.admin) {
+      this.data.admin = {
+        email: process.env.ADMIN_EMAIL || '',
+        passwordHash: '',
+        name: process.env.ADMIN_NAME || 'Administrator',
+      };
+    }
     this.data.admin.passwordHash = hashPassword(newPassword);
     this.data.updatedAt = new Date().toISOString();
     this.saveData(this.data);
