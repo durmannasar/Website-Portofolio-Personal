@@ -9,7 +9,9 @@ import { db } from './server/db';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction =
+  process.env.NODE_ENV === 'production' ||
+  (!process.env.NODE_ENV && fs.existsSync(path.resolve(process.cwd(), 'dist', 'index.html')));
 
 // CORS configuration supporting credentials (cookies & Bearer tokens)
 app.use(
@@ -113,11 +115,10 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
   return res.status(401).json({ error: 'Unauthorized: Invalid or expired session' });
 }
 
-// ================= API ROUTES =================
-
-// Health check endpoint (Requirement 16)
+// ================= B. HEALTH CHECK ENDPOINT =================
 app.get('/api/health', (_req: Request, res: Response) => {
-  return res.json({
+  res.setHeader('Content-Type', 'application/json');
+  return res.status(200).json({
     status: 'ok',
     environment: process.env.NODE_ENV || 'production',
   });
@@ -627,12 +628,13 @@ app.get('/api/stats', requireAuth, (_req, res) => {
   });
 });
 
-// 404 handler for unknown API routes (MUST return JSON, NEVER index.html)
-app.all('/api/*', (_req: Request, res: Response) => {
-  return res.status(404).json({ error: 'API route not found' });
+// C. 404 handler for unknown API routes (MUST return JSON, NEVER index.html)
+app.all(['/api', '/api/*'], (_req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'application/json');
+  return res.status(404).json({ error: 'API endpoint not found' });
 });
 
-// Mount Vite or Static Frontend
+// Mount Vite (development) or Static Frontend & SPA Fallback (production)
 async function startServer() {
   if (!isProduction) {
     const { createServer: createViteServer } = await import('vite');
@@ -643,13 +645,15 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.resolve(process.cwd(), 'dist');
-    // Serve static files from dist directory
+    // D. Serve static files from dist directory
     app.use(express.static(distPath, { maxAge: '1d', index: false }));
 
-    // SPA fallback: return index.html for all client-side page routes
+    // E. SPA fallback: return index.html for all client-side page routes (LAST ROUTE)
     app.get('*', (req: Request, res: Response) => {
-      if (req.path.startsWith('/api')) {
-        return res.status(404).json({ error: 'API route not found' });
+      // Hard guard: /api/* routes never fall into SPA fallback
+      if (req.path === '/api' || req.path.startsWith('/api/')) {
+        res.setHeader('Content-Type', 'application/json');
+        return res.status(404).json({ error: 'API endpoint not found' });
       }
       const indexPath = path.resolve(distPath, 'index.html');
       if (fs.existsSync(indexPath)) {

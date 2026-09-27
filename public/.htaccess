@@ -25,7 +25,19 @@
   RewriteRule ^sitemap\.xml$ - [L]
   RewriteRule ^uploads/(.*)$ - [L]
 
-  # 5. SPA Client-Side Routing Fallback (For /cpanel, /admin, /work, /about, /services, etc.)
+  # 5. DO NOT REWRITE API ROUTES TO INDEX.HTML!
+  # If mod_proxy is enabled, proxy /api to local Node.js backend port
+  <IfModule mod_proxy.c>
+    RewriteCond %{REQUEST_URI} ^/api [NC]
+    RewriteRule ^api/(.*)$ http://127.0.0.1:3000/api/$1 [P,L]
+  </IfModule>
+
+  # Pass /api requests through directly to Node.js / passenger (do not rewrite)
+  RewriteCond %{REQUEST_URI} ^/api [NC]
+  RewriteRule ^ - [L]
+
+  # 6. SPA Client-Side Routing Fallback (ONLY for frontend HTML pages, NEVER for /api/*)
+  RewriteCond %{REQUEST_URI} !^/api [NC]
   RewriteRule ^ index.html [L]
 </IfModule>
 

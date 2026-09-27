@@ -79,6 +79,23 @@ function AppContent() {
     trackPageView(path, document.title);
   };
 
+  // Safety guard: API paths must never be handled as React application routes
+  if (currentPath === '/api' || currentPath.startsWith('/api/')) {
+    return (
+      <div className="min-h-screen bg-[#090A0F] text-white p-8 font-mono text-xs flex flex-col items-center justify-center">
+        <div className="max-w-lg w-full border border-red-500/40 bg-red-950/20 p-6 space-y-3">
+          <p className="text-red-400 font-bold text-sm tracking-wide">API Endpoint Captured by Frontend SPA</p>
+          <p className="text-neutral-300">
+            Path <code className="text-yellow-400">{currentPath}</code> reached React SPA instead of Express API.
+          </p>
+          <p className="text-neutral-400 text-[11px] leading-relaxed">
+            Verify that your Hostinger Node.js application is running (<code className="text-neutral-200">npm start</code>) and that requests to <code className="text-neutral-200">/api/*</code> are not intercepted by static web hosting rules.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Render Admin Section (Supporting both /cpanel and /admin)
   if (isAdminRoute) {
     const targetAdminPath = currentPath.startsWith('/cpanel') ? '/cpanel' : '/admin';
