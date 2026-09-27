@@ -127,22 +127,18 @@ export const api = {
 
       // Production Static Hostinger Fallback: Verify credentials directly in browser
       const normalizedEmail = email.trim().toLowerCase();
-      const allowedEmails = [
-        'drmn@durmannasarstudio.com',
-        'admin@durmannasarstudio.com',
-        'durman.nasar@gmail.com',
-      ];
-
       const storedCustomHash = localStorage.getItem('dns_admin_pwd_hash');
+      const storedAdminEmail = localStorage.getItem('dns_admin_email');
+
       if (!storedCustomHash) {
         throw new Error('Kredensial administrator belum dikonfigurasi atau tidak valid.');
       }
 
-      if (allowedEmails.includes(normalizedEmail) && hashPassword(password) === storedCustomHash) {
+      if ((!storedAdminEmail || storedAdminEmail.toLowerCase() === normalizedEmail) && hashPassword(password) === storedCustomHash) {
         const token = `dns_session_${Date.now()}_hostinger`;
         const user = {
           email: normalizedEmail,
-          name: 'Durman Nasar',
+          name: localStorage.getItem('dns_admin_name') || 'Administrator',
           role: 'admin',
         };
         setAuthToken(token);
@@ -166,7 +162,7 @@ export const api = {
           // ignore
         }
       }
-      return { email: 'drmn@durmannasarstudio.com', name: 'Durman Nasar', role: 'admin' };
+      return { email: localStorage.getItem('dns_admin_email') || '', name: localStorage.getItem('dns_admin_name') || 'Administrator', role: 'admin' };
     }
   },
 
@@ -197,19 +193,14 @@ export const api = {
       });
     } catch {
       const normalized = email.trim().toLowerCase();
-      const allowedEmails = [
-        'drmn@durmannasarstudio.com',
-        'admin@durmannasarstudio.com',
-        'durman.nasar@gmail.com',
-      ];
-      if (!allowedEmails.includes(normalized)) {
+      if (!normalized) {
         throw new Error('Email administrator tidak terdaftar dalam sistem.');
       }
       return {
         success: true,
         message: 'Identitas administrator terverifikasi.',
-        recoveryEmail: 'durman.nasar@gmail.com',
-        primaryEmail: 'drmn@durmannasarstudio.com',
+        recoveryEmail: normalized,
+        primaryEmail: normalized,
       };
     }
   },
@@ -222,12 +213,7 @@ export const api = {
       });
     } catch {
       const normalized = email.trim().toLowerCase();
-      const allowedEmails = [
-        'drmn@durmannasarstudio.com',
-        'admin@durmannasarstudio.com',
-        'durman.nasar@gmail.com',
-      ];
-      if (!allowedEmails.includes(normalized)) {
+      if (!normalized) {
         throw new Error('Tidak diizinkan mengubah kata sandi untuk email ini.');
       }
       if (newPassword.length < 8) {

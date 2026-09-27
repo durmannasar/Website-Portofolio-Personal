@@ -629,6 +629,14 @@ app.get('/api/stats', requireAuth, (_req, res) => {
 
 // Mount Vite or Static Frontend
 async function startServer() {
+  // Seed Cloud SQL database if tables are empty
+  try {
+    const { seedCloudSqlIfEmpty } = await import('./server/cloudSqlService.ts');
+    await seedCloudSqlIfEmpty();
+  } catch (seedErr) {
+    console.warn('Notice: Cloud SQL initialization check:', seedErr);
+  }
+
   if (!isProduction) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
